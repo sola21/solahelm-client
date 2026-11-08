@@ -4,7 +4,7 @@
 #   powershell -ExecutionPolicy Bypass -File tools\release.ps1 [-Notes "what changed"] [-Proxy http://127.0.0.1:7890] [-Prerelease]
 #
 # Before: bump "version:" in app/pubspec.yaml and appVersion in app/lib/screens/settings.dart.
-param([string]$Notes = '', [string]$Proxy = '', [switch]$Prerelease, [switch]$SkipBuild)
+param([string]$Notes = '', [string]$NotesFile = '', [string]$Proxy = '', [switch]$Prerelease, [switch]$SkipBuild)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 
@@ -24,6 +24,6 @@ if ($Proxy) { $env:HTTPS_PROXY = $Proxy; $env:HTTP_PROXY = $Proxy }
 $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
 if (-not $gh) { $gh = 'C:\Users\user\dev\gh\bin\gh.exe' }
 $ghArgs = @('release', 'create', $tag) + $zips + @('--repo', 'sola21/solahelm-client', '--title', "SolaHelm Client $pubspec")
-if ($Notes) { $ghArgs += @('--notes', $Notes) } else { $ghArgs += '--generate-notes' }
+if ($NotesFile) { $ghArgs += @('--notes-file', $NotesFile) } elseif ($Notes) { $ghArgs += @('--notes', $Notes) } else { $ghArgs += '--generate-notes' }
 if ($Prerelease) { $ghArgs += '--prerelease' }
 & $gh @ghArgs

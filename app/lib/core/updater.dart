@@ -50,7 +50,15 @@ class Updater {
   /// The newest release if it's newer than ours, else null.
   /// [proxyPort]: the core's local port, used when set (github.com may be blocked).
   Future<UpdateInfo?> check({int? proxyPort}) async {
-    final m = await _getJson(Uri.parse('https://api.github.com/repos/$repo/releases/latest'), proxyPort);
+    final uri = Uri.parse('https://api.github.com/repos/$repo/releases/latest');
+    Map<String, dynamic>? m;
+    try {
+      m = await _getJson(uri, proxyPort);
+    } catch (_) {
+      // api.github.com answers 5xx or times out now and then on some networks.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      m = await _getJson(uri, proxyPort);
+    }
     lastHadRelease = m != null;
     if (m == null) return null; // no releases yet
     final tag = (m['tag_name'] ?? '').toString();
