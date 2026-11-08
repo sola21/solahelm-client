@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
 
 import '../l10n/app_localizations.dart';
 import '../desktop.dart';
@@ -7,6 +8,7 @@ import '../state/scope.dart';
 import '../state/settings.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'settings_advanced.dart';
 
 const appVersion = '0.1.0';
 const singBoxVersion = '1.14.4';
@@ -18,7 +20,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final settings = AppScope.of(context).settings;
+    final st = AppScope.of(context);
+    final settings = st.settings;
     final p = context.palette;
 
     Widget label(String t) => Padding(
@@ -90,6 +93,21 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: settings.setStartMinimized,
               ),
               const Divider(),
+              ListTile(
+                dense: true,
+                title: Text(s.toggleHotkey),
+                subtitle: Text(settings.toggleHotkey == null ? s.hotkeyNone : hotkeyLabel(settings.toggleHotkey!)),
+                trailing: Wrap(spacing: 4, children: [
+                  if (settings.toggleHotkey != null)
+                    IconButton(
+                      tooltip: s.delete,
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => settings.setToggleHotkey(null),
+                    ),
+                  OutlinedButton(onPressed: () => _recordHotkey(context, settings), child: Text(s.hotkeySet)),
+                ]),
+              ),
+              const Divider(),
               SwitchListTile(
                 dense: true,
                 title: Text(s.autoConnect),
@@ -101,6 +119,30 @@ class SettingsScreen extends StatelessWidget {
               ),
             ]),
           ),
+        ],
+        label(s.settingsConnection),
+        Card(
+          child: Column(children: [
+            ListTile(
+              leading: const Icon(Icons.lan_outlined),
+              title: Text(s.settingsConnection),
+              subtitle: Text(s.settingsConnectionHint),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => ConnectionSettingsPage.open(context, AppScope.of(context)),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.memory_outlined),
+              title: Text(s.settingsCoreAdv),
+              subtitle: Text(s.settingsCoreAdvHint),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => CoreSettingsPage.open(context, AppScope.of(context)),
+            ),
+          ]),
+        ),
+        if (st.updater != null) ...[
+          label(s.updates),
+          const _UpdatesCard(),
         ],
         label(s.settingsAbout),
         Text('SolaHelm Client $appVersion${isPortable ? ' · portable' : ''}', style: const TextStyle(fontSize: 14)),
@@ -129,6 +171,105 @@ class ComingSoonScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Text(S.of(context).comingSoon, textAlign: TextAlign.center, style: TextStyle(color: p.muted)),
       ],
+    );
+  }
+}
+
+/// "Ctrl + Alt + V" from hotkey_manager JSON.
+String hotkeyLabel(Map<String, dynamic> json) {
+  try {
+    final hk = HotKey.fromJson(json);
+    final mods = [for (final m in hk.modifiers ?? const <HotKeyModifier>[]) m.physicalKeys.first.debugName ?? m.name];
+    return [...mods, hk.key.keyLabel].join(' + ');
+  } catch (_) {
+    return '?';
+  }
+}
+
+Future<void> _recordHotkey(BuildContext context, Settings settings) async {
+  final s = S.of(context);
+  HotKey? recorded;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setD) => AlertDialog(
+        title: Text(s.toggleHotkey),
+        content: SizedBox(
+          width: 380,
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(s.hotkeyPress),
+            const SizedBox(height: 16),
+            HotKeyRecorder(onHotKeyRecorded: (hk) => setD(() => recorded = hk)),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
+          FilledButton(onPressed: recorded == null ? null : () => Navigator.pop(ctx, true), child: Text(s.save)),
+        ],
+      ),
+    ),
+  );
+  if (ok == true && recorded != null) settings.setToggleHotkey(recorded!.toJson());
+}
+
+class _UpdatesCard extends StatelessWidget {
+  const _UpdatesCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    final p = context.palette;
+    final upd = st.update;
+    final status = switch (st.updateStatus) {
+      null => '',
+      'latest' => s.updateLatest,
+      'none' => s.updateNoReleases,
+      final e => s.errorPrefix(e),
+    };
+    return Card(
+      child: Column(children: [
+        SwitchListTile(
+          dense: true,
+          title: Text(s.checkUpdates),
+          value: st.settings.checkUpdates,
+          onChanged: st.settings.setCheckUpdates,
+        ),
+        const Divider(),
+        ListTile(
+          dense: true,
+          title: Text(upd != null ? s.updateAvailable(upd.version) : (status.isEmpty ? 'SolaHelm Client $appVersion' : status)),
+          subtitle: st.updateProgress != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    LinearProgressIndicator(value: st.updateProgress),
+                    const SizedBox(height: 4),
+                    Text(s.updateDownloading((st.updateProgress! * 100).round()), style: TextStyle(fontSize: 12, color: p.muted)),
+                  ]),
+                )
+              : (upd != null ? Text(s.updateHint, style: TextStyle(fontSize: 12, color: p.muted)) : null),
+          trailing: upd != null
+              ? FilledButton(
+                  onPressed: st.updateProgress != null ? null : () => DesktopShell.instance?.installUpdateAndExit(),
+                  child: Text(s.updateTo(upd.version)),
+                )
+              : OutlinedButton(
+                  onPressed: st.checkingUpdate ? null : () => st.checkForUpdates(),
+                  child: st.checkingUpdate
+                      ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(s.checkNow),
+                ),
+        ),
+        if (upd != null && upd.notes.trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(upd.notes.trim(), maxLines: 8, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: p.muted)),
+            ),
+          ),
+      ]),
     );
   }
 }

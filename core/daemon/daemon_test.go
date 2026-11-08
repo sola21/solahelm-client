@@ -9,8 +9,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/sola21/solahelm-client/core/engine"
 )
 
 const secret = "0123456789abcdef0123"
@@ -118,5 +121,69 @@ func TestDaemonFlow(t *testing.T) {
 
 	if code := call(t, api.URL, "POST", "/stop", nil, &st); code != 200 || st.Running {
 		t.Fatalf("stop: %d %+v", code, st)
+	}
+}
+
+func TestValidateAndProfileRules(t *testing.T) {
+	links := "hysteria2://pass@vps1.example.org:443?sni=vps1.example.org#DE-hy2\n" +
+		"trojan://pass@vps1.example.org:7443?sni=vps1.example.org#DE-trojan\n"
+	v := Validate([]byte(links), nil)
+	if !v.OK || v.Converted != 2 || v.Detect.Core != "mihomo" {
+		t.Fatalf("links: %+v", v)
+	}
+	pr, err := ProfileRules([]byte(links))
+	if err != nil || !pr.Replace || len(pr.Rules) == 0 || len(pr.Targets) < 4 {
+		t.Fatalf("profile rules for links: %+v %v", pr, err)
+	}
+	bad := Validate([]byte(links), &engine.Rules{Lines: []string{"DOMAIN,x.com,NoSuchGroup"}})
+	if bad.OK {
+		t.Fatal("rule to a missing group accepted")
+	}
+	good := Validate([]byte(links), &engine.Rules{Lines: []string{"PROCESS-NAME,Telegram.exe,Proxy", "MATCH,DIRECT"}, Replace: true})
+	if !good.OK {
+		t.Fatalf("good rules rejected: %s", good.Error)
+	}
+	if v := Validate([]byte("not a config"), nil); v.OK || v.Error == "" {
+		t.Fatalf("garbage accepted: %+v", v)
+	}
+}
+
+// /detach: the core outlives its UI; /attach: a new UI is followed instead.
+func TestDetachAttach(t *testing.T) {
+	work, _ := os.MkdirTemp("", "solahelm-detach-test-")
+	defer os.RemoveAll(work)
+	srv := New(secret, work, nil)
+	api := httptest.NewServer(srv.Handler())
+	defer api.Close()
+
+	ui := exec.Command("powershell", "-NoProfile", "-Command", "Start-Sleep -Seconds 2")
+	if err := ui.Start(); err != nil {
+		t.Skip("no helper process:", err)
+	}
+	srv.WatchParent(ui.Process.Pid)
+	var st Status
+	if code := call(t, api.URL, "POST", "/detach", nil, &st); code != 200 {
+		t.Fatalf("detach: %d", code)
+	}
+	_ = ui.Wait()
+	time.Sleep(300 * time.Millisecond)
+	select {
+	case <-srv.Done():
+		t.Fatal("daemon stopped although detached")
+	default:
+	}
+
+	ui2 := exec.Command("powershell", "-NoProfile", "-Command", "Start-Sleep -Seconds 1")
+	if err := ui2.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if code := call(t, api.URL, "POST", "/attach", map[string]int{"pid": ui2.Process.Pid}, &st); code != 200 {
+		t.Fatalf("attach: %d", code)
+	}
+	_ = ui2.Wait()
+	select {
+	case <-srv.Done():
+	case <-time.After(5 * time.Second):
+		t.Fatal("daemon did not stop after the attached UI exited")
 	}
 }

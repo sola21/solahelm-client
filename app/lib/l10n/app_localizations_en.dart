@@ -536,4 +536,385 @@ class SEn extends S {
   @override
   String get notElevated =>
       'Not enough rights for TUN: Windows did not allow the core to run as administrator. Accept the prompt or switch to System proxy.';
+
+  @override
+  String get navRules => 'Rules';
+
+  @override
+  String get importFile => 'File';
+
+  @override
+  String pastedName(String date) {
+    return 'From clipboard $date';
+  }
+
+  @override
+  String get profileAdded => 'Profile added';
+
+  @override
+  String get menuOpen => 'Open and edit';
+
+  @override
+  String get menuRules => 'Rules';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get sourceFile => 'file';
+
+  @override
+  String get sourcePasted => 'pasted';
+
+  @override
+  String get editedBadge => 'edited';
+
+  @override
+  String get rulesBadge => 'own rules';
+
+  @override
+  String get check => 'Check';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String checkOk(String format, String core) {
+    return 'Config is fine: $format, $core core';
+  }
+
+  @override
+  String checkOkLinks(int n) {
+    return 'Links are fine: $n proxies, mihomo core';
+  }
+
+  @override
+  String get editedWarning =>
+      'This profile comes from a link: a subscription refresh replaces edits to its text. Put your own rules in Rules, they are kept separately.';
+
+  @override
+  String get unsavedTitle => 'Unsaved changes';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get rulesEdit => 'Edit';
+
+  @override
+  String get rulesActive => 'Active rules';
+
+  @override
+  String get rulesOfProfile => 'Profile rules';
+
+  @override
+  String get rulesNone => 'No rules';
+
+  @override
+  String rulesCount(int n) {
+    return 'Rules: $n';
+  }
+
+  @override
+  String get ruleType => 'Rule type';
+
+  @override
+  String get rulePayload => 'Value';
+
+  @override
+  String get ruleTarget => 'Proxy';
+
+  @override
+  String get addTop => 'To top';
+
+  @override
+  String get addBottom => 'To bottom';
+
+  @override
+  String get asText => 'As text';
+
+  @override
+  String get asList => 'As list';
+
+  @override
+  String get rulesHintReplace =>
+      'This list replaces the profile\'s rules and is kept apart from the subscription: a refresh won\'t reset it.';
+
+  @override
+  String get rulesHintPrepend =>
+      'sing-box profile: your rules go in front of the profile\'s rules. The profile\'s own rules are below, read-only.';
+
+  @override
+  String get resetRules => 'Restore profile rules';
+
+  @override
+  String get profileRulesReadonly => 'Profile rules (read-only)';
+
+  @override
+  String get searchRules => 'Search rules';
+
+  @override
+  String ruleInvalid(int n, String line) {
+    return 'Bad rule on line $n: $line';
+  }
+
+  @override
+  String get rulesSaved => 'Rules saved';
+
+  @override
+  String get payloadEmpty => 'Enter a value';
+
+  @override
+  String get addRuleFor => 'Rule';
+
+  @override
+  String get ruleDirect => 'Direct';
+
+  @override
+  String get ruleProxy => 'Via VPN';
+
+  @override
+  String get ruleReject => 'Block';
+
+  @override
+  String ruleAddedFor(String what) {
+    return 'Rule for $what added';
+  }
+
+  @override
+  String rulesEditorTitle(String name) {
+    return 'Rules: $name';
+  }
+
+  @override
+  String get rulesNotConnectedHint =>
+      'Showing the profile\'s rules. Connect to see the rules the core applied.';
+
+  @override
+  String get formatLinksShort => 'Share links';
+
+  @override
+  String get statusDisconnecting => 'Disconnecting…';
+
+  @override
+  String get trayRestart => 'Restart';
+
+  @override
+  String get settingsConnection => 'Connection and TUN';
+
+  @override
+  String get settingsConnectionHint =>
+      'TUN stack and routes, system proxy exceptions, ports, LAN access';
+
+  @override
+  String get settingsCoreAdv => 'Core';
+
+  @override
+  String get settingsCoreAdvHint =>
+      'IPv6, log level, process detection, core versions';
+
+  @override
+  String get reapplyHint => 'Changes apply after reconnecting.';
+
+  @override
+  String get reapply => 'Reconnect';
+
+  @override
+  String get secTun => 'TUN';
+
+  @override
+  String get manageTun => 'Manage TUN settings';
+
+  @override
+  String get manageTunOff =>
+      'The profile\'s settings are used (gVisor stack, no firewall prompts).';
+
+  @override
+  String get tunStack => 'Stack';
+
+  @override
+  String get tunStackHint =>
+      'gVisor opens no ports and causes no firewall prompt. Mixed and System are faster, but Windows may ask for permission.';
+
+  @override
+  String get strictRoute => 'Strict routing';
+
+  @override
+  String get strictRouteHint =>
+      'Keeps DNS queries from leaking around the tunnel.';
+
+  @override
+  String get mtu => 'MTU';
+
+  @override
+  String get routeExclude => 'Networks excluded from TUN';
+
+  @override
+  String get routeExcludeHint =>
+      'These networks go direct, around the tunnel: LAN, RDP, printers.';
+
+  @override
+  String get addNetwork => 'Add network';
+
+  @override
+  String get networkHint => '192.168.1.0/24';
+
+  @override
+  String get secSysProxy => 'System proxy';
+
+  @override
+  String get proxyBypass => 'System proxy exceptions';
+
+  @override
+  String get proxyBypassHint =>
+      'Addresses apps reach directly. Masks work: 192.168.*, *.local, <local>.';
+
+  @override
+  String get addException => 'Add exception';
+
+  @override
+  String get restoreDefaults => 'Default list';
+
+  @override
+  String get secPorts => 'Ports';
+
+  @override
+  String get mixedPort => 'Mixed port (HTTP + SOCKS)';
+
+  @override
+  String get mixedPortHint => 'If the port is busy, the next free one is used.';
+
+  @override
+  String get allowLan => 'Allow connections from the LAN';
+
+  @override
+  String get allowLanHint =>
+      'Other devices can use this computer\'s proxy. Windows may ask for a firewall permission.';
+
+  @override
+  String lanAddresses(String list) {
+    return 'Addresses for other devices: $list';
+  }
+
+  @override
+  String get ipv6 => 'IPv6';
+
+  @override
+  String get ipv6Profile => 'From profile';
+
+  @override
+  String get ipv6On => 'On';
+
+  @override
+  String get ipv6Off => 'Off';
+
+  @override
+  String get logLevel => 'Log level';
+
+  @override
+  String get logLevelProfile => 'From profile';
+
+  @override
+  String get findProcess => 'Detect processes';
+
+  @override
+  String get findProcessHint =>
+      'Needed to group connections and for PROCESS-NAME rules. Turn off to save some CPU.';
+
+  @override
+  String get coresBuiltIn =>
+      'The cores are built into the client and update with it.';
+
+  @override
+  String get invalidCidr => 'Expected a network like 192.168.1.0/24';
+
+  @override
+  String get invalidPort => 'Port 1 to 65535';
+
+  @override
+  String get invalidMtu => 'MTU 576 to 65535';
+
+  @override
+  String get secDns => 'DNS';
+
+  @override
+  String get dnsOverride => 'Own DNS servers (mihomo profiles)';
+
+  @override
+  String get dnsOverrideHint =>
+      'Replaces the profile\'s DNS: queries go through the VPN by the rules, your ISP doesn\'t see them. The first lookup is a bit slower. Turn on if the profile\'s DNS misbehaves. sing-box profiles are not affected.';
+
+  @override
+  String get dnsRemote => 'Through the VPN';
+
+  @override
+  String get dnsRemoteHint =>
+      'For all names. Encrypted DNS: https://…, tls://…';
+
+  @override
+  String get dnsDirect => 'Direct';
+
+  @override
+  String get dnsDirectHint =>
+      'Only to find the VPN servers themselves and for direct traffic. Plain IP addresses.';
+
+  @override
+  String get invalidResolver =>
+      'Expected an IP or an address like https://…/dns-query';
+
+  @override
+  String get trayExitKeepCore => 'Exit, keep the VPN on';
+
+  @override
+  String get toggleHotkey => 'Hotkey to toggle the VPN';
+
+  @override
+  String get hotkeyNone => 'Not set';
+
+  @override
+  String get hotkeySet => 'Set';
+
+  @override
+  String get hotkeyPress =>
+      'Press a key combination, e.g. Ctrl + Alt + V. It works even while the window is hidden.';
+
+  @override
+  String get updates => 'Updates';
+
+  @override
+  String get checkUpdates => 'Check for updates on start';
+
+  @override
+  String get checkNow => 'Check';
+
+  @override
+  String get updateLatest => 'You have the latest version';
+
+  @override
+  String get updateNoReleases => 'No releases yet';
+
+  @override
+  String updateAvailable(String v) {
+    return 'Version $v is available';
+  }
+
+  @override
+  String updateTo(String v) {
+    return 'Update to $v';
+  }
+
+  @override
+  String updateDownloading(int p) {
+    return 'Downloading the update… $p%';
+  }
+
+  @override
+  String get updateHint =>
+      'The client downloads the archive (through the VPN if it\'s on), closes, updates and starts again. Settings and subscriptions stay.';
 }

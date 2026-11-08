@@ -8,10 +8,12 @@ environment:
   sdk: ^3.13.7
 
 dependencies:
+  file_selector: ^1.1.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  hotkey_manager: 0.2.3
   intl: any
   launch_at_startup: ^0.5.1
   tray_manager: 0.5.2

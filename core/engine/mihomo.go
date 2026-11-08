@@ -56,6 +56,12 @@ func (m *mihomoEngine) Start(raw []byte, opts Options) error {
 	if opts.FindProcess {
 		hubOpts = append(hubOpts, func(c *config.Config) { c.General.FindProcessMode = process.FindProcessAlways })
 	}
+	if err := opts.Tuning.validate(); err != nil {
+		return err
+	}
+	if opts.Tuning != nil {
+		hubOpts = append(hubOpts, func(c *config.Config) { applyMihomoTuning(c, opts.Tuning) })
+	}
 	if opts.TUNStack != "" {
 		stack, ok := constant.StackTypeMapping[strings.ToLower(opts.TUNStack)]
 		if !ok {
@@ -69,6 +75,15 @@ func (m *mihomoEngine) Start(raw []byte, opts Options) error {
 			c.General.Port = 0
 			c.General.SocksPort = 0
 		})
+	}
+	raw, err := injectMihomoRules(raw, opts.Rules)
+	if err != nil {
+		return err
+	}
+	if opts.Tuning != nil {
+		if raw, err = injectMihomoDNS(raw, opts.Tuning.DNS); err != nil {
+			return err
+		}
 	}
 	if err := hub.Parse(raw, hubOpts...); err != nil {
 		return err

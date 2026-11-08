@@ -26,6 +26,7 @@ import (
 	mihomoC "github.com/metacubex/mihomo/constant"
 	singboxC "github.com/sagernet/sing-box/constant"
 
+	"github.com/sola21/solahelm-client/core/convert"
 	"github.com/sola21/solahelm-client/core/detect"
 	"github.com/sola21/solahelm-client/core/engine"
 )
@@ -92,6 +93,7 @@ type runFlags struct {
 	proxyOnly, loopback                       *bool
 	port                                      *int
 	tunStack                                  *string
+	dnsRemote, dnsDirect                      *string
 }
 
 func addRunFlags(fs *flag.FlagSet, proxyOnlyDefault bool, controllerDefault string, portDefault int) runFlags {
@@ -105,6 +107,8 @@ func addRunFlags(fs *flag.FlagSet, proxyOnlyDefault bool, controllerDefault stri
 		port:       fs.Int("port", portDefault, "local mixed port (0: keep config value)"),
 		loopback:   fs.Bool("loopback", proxyOnlyDefault, "listen on 127.0.0.1 only, no allow-lan (keeps TUN)"),
 		tunStack:   fs.String("tun-stack", "", "override TUN stack: gvisor, system or mixed"),
+		dnsRemote:  fs.String("dns-remote", "", "mihomo: replace DNS, comma list of remote resolvers (needs -dns-direct)"),
+		dnsDirect:  fs.String("dns-direct", "", "mihomo: plain resolvers for proxy servers and direct traffic"),
 	}
 }
 
@@ -118,15 +122,27 @@ func start(m *engine.Manager, f runFlags, src string) engine.Kind {
 			fatal(err)
 		}
 		if r.Format == detect.ShareLinks {
-			fatal(fmt.Errorf("got %d share links (%s); converting links to a config is not implemented yet — "+
-				"use the panel's /singbox or /clash subscription", len(r.Links), strings.Join(r.Protocols, ", ")))
+			conv, err := convert.LinksToMihomo(body)
+			if err != nil {
+				fatal(err)
+			}
+			body = conv.YAML
+			fmt.Fprintf(os.Stderr, "corectl: %d links -> mihomo config with %d proxies (skipped: %s)\n",
+				len(r.Links), conv.Proxies, strings.Join(conv.Skipped, ", "))
 		}
 		kind = r.Core
 		fmt.Fprintf(os.Stderr, "corectl: %s -> %s (%s)\n", r.Format, r.Core, r.Reason)
 	} else if !kind.Valid() {
 		fatal(fmt.Errorf("unknown core %q", *f.core))
 	}
+	var tuning *engine.Tuning
+	if *f.dnsRemote != "" && *f.dnsDirect != "" {
+		tuning = &engine.Tuning{DNS: &engine.DNSOverride{
+			Remote: strings.Split(*f.dnsRemote, ","), Direct: strings.Split(*f.dnsDirect, ","),
+		}}
+	}
 	err := m.Start(kind, body, engine.Options{
+		Tuning:       tuning,
 		WorkDir:      filepath.Join(*f.workdir, string(kind)),
 		Controller:   *f.controller,
 		Secret:       *f.secret,

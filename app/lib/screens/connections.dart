@@ -6,6 +6,7 @@ import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'rules.dart';
 
 enum _Sort { time, download, upload, host, count }
 
@@ -432,8 +433,52 @@ Future<void> showConnectionDetails(BuildContext context, ConnectionEntry c) {
             ]),
           ),
         ),
-        actions: [FilledButton.tonal(onPressed: () => Navigator.pop(ctx), child: Text(s.close))],
+        actions: [
+          if (AppScope.of(context).subscription?.loaded ?? false)
+            PopupMenuButton<RuleLine>(
+              tooltip: s.addRuleFor,
+              onSelected: (r) {
+                final st = AppScope.of(context);
+                Navigator.pop(ctx);
+                RulesEditorPage.open(context, st, st.subscription!.id, prefill: r);
+              },
+              itemBuilder: (_) => [
+                if (c.host.isNotEmpty && c.host != c.destIp)
+                  PopupMenuItem(
+                    value: RuleLine(type: 'DOMAIN-SUFFIX', payload: _suffix(c.host), target: 'DIRECT'),
+                    child: Text('DOMAIN-SUFFIX ${_suffix(c.host)}'),
+                  ),
+                if (c.destIp.isNotEmpty)
+                  PopupMenuItem(
+                    value: RuleLine(type: 'IP-CIDR', payload: '${c.destIp}/32', target: 'DIRECT', noResolve: true),
+                    child: Text('IP-CIDR ${c.destIp}/32'),
+                  ),
+                if (c.process.isNotEmpty || c.processPath.isNotEmpty)
+                  PopupMenuItem(
+                    value: RuleLine(type: 'PROCESS-NAME', payload: c.app, target: 'DIRECT'),
+                    child: Text('PROCESS-NAME ${c.app}'),
+                  ),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.add_road, size: 18),
+                  const SizedBox(width: 6),
+                  Text(s.addRuleFor),
+                ]),
+              ),
+            ),
+          FilledButton.tonal(onPressed: () => Navigator.pop(ctx), child: Text(s.close)),
+        ],
       );
     },
   );
+}
+
+/// "www.youtube.com" -> "youtube.com"; keeps two labels (three for short ones like co.uk).
+String _suffix(String host) {
+  final parts = host.split('.');
+  if (parts.length <= 2) return host;
+  final two = parts.sublist(parts.length - 2).join('.');
+  return parts[parts.length - 2].length <= 3 && parts.length >= 3 ? parts.sublist(parts.length - 3).join('.') : two;
 }

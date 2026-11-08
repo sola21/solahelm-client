@@ -193,7 +193,9 @@ func set(items ...string) map[string]bool {
 // Supports reports whether core k can run protocol p as a client.
 func Supports(k engine.Kind, p string) bool { return support[k][p] }
 
-func detectLinks(links []string, prefer engine.Kind) Result {
+// Share links are turned into a mihomo config (see package convert), so they
+// always run on mihomo; Unsupported lists protocols mihomo can't run.
+func detectLinks(links []string, _ engine.Kind) Result {
 	seen := map[string]bool{}
 	for _, l := range links {
 		p, _ := linkProtocol(l)
@@ -204,31 +206,11 @@ func detectLinks(links []string, prefer engine.Kind) Result {
 		protocols = append(protocols, p)
 	}
 	sort.Strings(protocols)
-
-	other := engine.Mihomo
-	if prefer == engine.Mihomo {
-		other = engine.SingBox
-	}
-	missPrefer, missOther := missing(prefer, protocols), missing(other, protocols)
-
-	r := Result{Format: ShareLinks, Links: links, Protocols: protocols}
-	switch {
-	case len(missPrefer) <= len(missOther):
-		r.Core, r.Unsupported = prefer, missPrefer
-		if len(missPrefer) == 0 && len(missOther) == 0 {
-			r.Reason = "both cores support " + strings.Join(protocols, ", ") + "; using preferred core"
-		} else if len(missPrefer) == 0 {
-			r.Reason = string(other) + " lacks " + strings.Join(missOther, ", ")
-		} else {
-			r.Reason = "no core supports everything; preferred core covers the most"
-		}
-	default:
-		r.Core, r.Unsupported = other, missOther
-		if len(missOther) == 0 {
-			r.Reason = string(prefer) + " lacks " + strings.Join(missPrefer, ", ")
-		} else {
-			r.Reason = "no core supports everything; " + string(other) + " covers the most"
-		}
+	r := Result{Format: ShareLinks, Core: engine.Mihomo, Links: links, Protocols: protocols,
+		Unsupported: missing(engine.Mihomo, protocols)}
+	r.Reason = "share links are converted to a mihomo config"
+	if len(r.Unsupported) > 0 {
+		r.Reason += "; skipped: " + strings.Join(r.Unsupported, ", ")
 	}
 	return r
 }

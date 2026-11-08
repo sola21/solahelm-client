@@ -1,3 +1,4 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,8 @@ import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'profile_editor.dart';
+import 'rules.dart';
 
 class SubscriptionsScreen extends StatelessWidget {
   const SubscriptionsScreen({super.key});
@@ -52,9 +55,9 @@ class SubscriptionsScreen extends StatelessWidget {
         Row(children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.comingSoon))),
-              icon: const Icon(Icons.qr_code_scanner, size: 18),
-              label: Text(s.scanQr),
+              onPressed: () => _importFile(context),
+              icon: const Icon(Icons.file_open_outlined, size: 18),
+              label: Text(s.importFile),
             ),
           ),
           const SizedBox(width: 8),
@@ -70,14 +73,36 @@ class SubscriptionsScreen extends StatelessWidget {
     );
   }
 
+  /// A link opens the add dialog; anything else is tried as config text
+  /// (sing-box JSON, Clash YAML or a list of share links).
   Future<void> _paste(BuildContext context) async {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
     if (!context.mounted) return;
-    if (!_isHttp(text)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.of(context).clipboardEmpty)));
+    if (text.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(s.clipboardEmpty)));
       return;
     }
-    showAddSubscriptionDialog(context, initial: text);
+    if (_isHttp(text) && !text.contains('\n')) {
+      showAddSubscriptionDialog(context, initial: text);
+      return;
+    }
+    final name = s.pastedName(DateFormat.Md(Localizations.localeOf(context).toString()).add_Hm().format(DateTime.now()));
+    final err = await st.importText(text, name: name);
+    messenger.showSnackBar(SnackBar(content: Text(err == null ? s.profileAdded : s.errorPrefix(err))));
+  }
+
+  Future<void> _importFile(BuildContext context) async {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    const group = XTypeGroup(label: 'config', extensions: ['yaml', 'yml', 'json', 'txt', 'conf']);
+    final file = await openFile(acceptedTypeGroups: const [group, XTypeGroup(label: '*')]);
+    if (file == null) return;
+    final err = await st.importFile(file.path);
+    messenger.showSnackBar(SnackBar(content: Text(err == null ? s.profileAdded : s.errorPrefix(err))));
   }
 }
 
@@ -199,6 +224,12 @@ class _SubscriptionCard extends StatelessWidget {
       if (only != null && sub.core != null) s.reasonOnlyIn(only, sub.core!.label) else if (sub.loaded) s.reasonByFormat,
       if (sub.updatedAt != null) s.updatedAt(DateFormat.Md(locale).add_Hm().format(sub.updatedAt!)),
     ];
+    final badges = <Widget>[
+      if (sub.source == SubSource.file) CountBadge.label(s.sourceFile),
+      if (sub.source == SubSource.pasted) CountBadge.label(s.sourcePasted),
+      if (sub.edited) CountBadge.label(s.editedBadge, color: p.warning),
+      if (sub.rules != null) CountBadge.label(s.rulesBadge, color: p.success),
+    ];
     final used = sub.usedGb, total = sub.totalGb;
 
     return Card(
@@ -220,9 +251,16 @@ class _SubscriptionCard extends StatelessWidget {
               if (sub.core != null) CoreChip(sub.core!),
               PopupMenuButton<String>(
                 iconSize: 18,
-                onSelected: (v) => v == 'refresh' ? state.refreshSubscription(sub.id) : state.removeSubscription(sub.id),
+                onSelected: (v) => switch (v) {
+                  'open' => ProfileEditorPage.open(context, state, sub.id),
+                  'rules' => RulesEditorPage.open(context, state, sub.id),
+                  'refresh' => state.refreshSubscription(sub.id),
+                  _ => state.removeSubscription(sub.id),
+                },
                 itemBuilder: (_) => [
-                  PopupMenuItem(value: 'refresh', child: Text(s.refresh)),
+                  if (sub.loaded) PopupMenuItem(value: 'open', child: Text(s.menuOpen)),
+                  if (sub.loaded) PopupMenuItem(value: 'rules', child: Text(s.menuRules)),
+                  if (sub.refreshable) PopupMenuItem(value: 'refresh', child: Text(s.refresh)),
                   PopupMenuItem(value: 'delete', child: Text(s.delete)),
                 ],
               ),
@@ -231,6 +269,10 @@ class _SubscriptionCard extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: Text(sub.loaded ? details.join(' · ') : s.subPending, style: TextStyle(fontSize: 12, color: p.muted)),
             ),
+            if (badges.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(spacing: 6, runSpacing: 4, children: badges),
+            ],
             if (used != null) ...[
               const SizedBox(height: 8),
               Padding(

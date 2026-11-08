@@ -2,11 +2,29 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
+#include <string>
+
 #include "flutter_window.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  // SolaHelm: "Restart" starts a new copy with --wait-pid=<old pid>; wait for
+  // the old copy to exit (up to 15 s) so it releases the instance lock.
+  {
+    const std::wstring cmd = ::GetCommandLineW();
+    const std::wstring flag = L"--wait-pid=";
+    const size_t at = cmd.find(flag);
+    if (at != std::wstring::npos) {
+      const DWORD old_pid = static_cast<DWORD>(_wtoi(cmd.c_str() + at + flag.size()));
+      HANDLE old = old_pid ? ::OpenProcess(SYNCHRONIZE, FALSE, old_pid) : nullptr;
+      if (old) {
+        ::WaitForSingleObject(old, 15000);
+        ::CloseHandle(old);
+      }
+    }
+  }
+
   // SolaHelm: one instance only. A second launch (e.g. from the Start menu
   // while the app sits in the tray) brings the running window forward.
   ::CreateMutexW(nullptr, TRUE, L"Local\\SolaHelmClient.SingleInstance");

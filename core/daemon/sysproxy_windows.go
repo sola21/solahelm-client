@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"fmt"
+	"strings"
 	"syscall"
 
 	"golang.org/x/sys/windows/registry"
@@ -24,7 +25,16 @@ type winSystemProxy struct {
 
 func newSystemProxy() systemProxy { return &winSystemProxy{} }
 
-func (p *winSystemProxy) Enable(addr string) error {
+// DefaultBypass is used when the app sends no exception list.
+var DefaultBypass = []string{
+	"localhost", "127.*", "10.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*", "172.2*", "172.30.*", "172.31.*",
+	"192.168.*", "<local>",
+}
+
+func (p *winSystemProxy) Enable(addr string, bypass []string) error {
+	if len(bypass) == 0 {
+		bypass = DefaultBypass
+	}
 	k, err := registry.OpenKey(registry.CURRENT_USER, internetSettings, registry.QUERY_VALUE|registry.SET_VALUE)
 	if err != nil {
 		return err
@@ -46,7 +56,7 @@ func (p *winSystemProxy) Enable(addr string) error {
 	if err := k.SetStringValue("ProxyServer", addr); err != nil {
 		return err
 	}
-	if err := k.SetStringValue("ProxyOverride", "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.2*;172.30.*;172.31.*;192.168.*;<local>"); err != nil {
+	if err := k.SetStringValue("ProxyOverride", strings.Join(bypass, ";")); err != nil {
 		return err
 	}
 	if p.saved.hasAuto {

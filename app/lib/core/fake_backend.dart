@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import '../models.dart';
@@ -50,7 +51,16 @@ class FakeBackend implements CoreBackend {
     required CorePref core,
     required ProxyMode mode,
     int port = 0,
+    List<String>? rules,
+    bool rulesReplace = false,
+    Map<String, dynamic>? tuning,
+    List<String>? bypass,
+    bool findProcess = true,
+    String tunStack = 'gvisor',
   }) async {
+    lastRules = rules;
+    lastTuning = tuning;
+    lastPort = port;
     if (mode == ProxyMode.tun && requireElevationForTun && !_elevated) {
       throw CoreException('needs-elevation: TUN mode requires administrator rights', needsElevation: true);
     }
@@ -71,8 +81,47 @@ class FakeBackend implements CoreBackend {
     );
   }
 
+  /// Rules, tuning and port passed to the last start(), for tests.
+  List<String>? lastRules;
+  Map<String, dynamic>? lastTuning;
+  int? lastPort;
+
+  static const _profileRules = ['DOMAIN-SUFFIX,ya.ru,DIRECT', 'GEOIP,RU,DIRECT,no-resolve', 'MATCH,proxy'];
+
+  @override
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false}) async {
+    if (content.trim().isEmpty || content.contains('broken')) {
+      return const ValidateResult(ok: false, error: 'unrecognized config');
+    }
+    final bad = rules?.where((l) => RuleLine.parse(l) == null).toList() ?? const [];
+    if (bad.isNotEmpty) return ValidateResult(ok: false, error: 'bad rule ${bad.first}');
+    final clash = !content.trimLeft().startsWith('{');
+    return ValidateResult(
+      ok: true,
+      format: clash ? SubFormat.clashYaml : SubFormat.singBoxJson,
+      core: clash ? CoreKind.mihomo : CoreKind.singBox,
+    );
+  }
+
+  @override
+  Future<ProfileRulesInfo> profileRules(String content) async => ProfileRulesInfo(
+        core: CoreKind.mihomo,
+        replace: true,
+        rules: _profileRules,
+        readOnly: const [],
+        targets: ['proxy', 'auto', ..._leaves.keys],
+        types: const ['DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD', 'IP-CIDR', 'PROCESS-NAME', 'GEOIP', 'MATCH'],
+      );
+
+  @override
+  Future<List<ProfileRule>> activeRules() async => [
+        for (final l in lastRules ?? _profileRules)
+          if (RuleLine.parse(l) case final r?) ProfileRule(r.type, r.payload, r.target),
+      ];
+
   @override
   Future<CoreStatus> stop() async {
+    if (stopDelay > Duration.zero) await Future<void>.delayed(stopDelay);
     _running = false;
     return const CoreStatus();
   }
@@ -151,11 +200,40 @@ class FakeBackend implements CoreBackend {
   @override
   Future<void> setRoutingMode(String mode) async => _mode = mode;
 
+  /// Mimics the core's /logs before its first line: nothing arrives and
+  /// cancelling never completes. Disconnect must not wait for it.
+  bool hangLogs = false;
+
+  /// Delay inside stop(), to watch the "disconnecting" state.
+  Duration stopDelay = Duration.zero;
+
   @override
-  Stream<LogEntry> logs({String level = 'info'}) async* {
+  Stream<LogEntry> logs({String level = 'info'}) {
+    if (hangLogs) {
+      final never = Completer<void>();
+      return StreamController<LogEntry>(onCancel: () => never.future).stream;
+    }
+    return _demoLogs();
+  }
+
+  Stream<LogEntry> _demoLogs() async* {
     yield LogEntry('info', '[TCP] 198.18.0.1:52591(curl.exe) --> api.ipify.org:443 match Match using proxy[DE-Germany-Hysteria2]', DateTime.now());
     yield LogEntry('warning', 'demo warning', DateTime.now());
   }
+
+  /// Status attachExisting() reports, for tests.
+  CoreStatus? leftRunning;
+  bool detached = false;
+
+  @override
+  Future<CoreStatus?> attachExisting() async {
+    final st = leftRunning;
+    if (st != null) _running = true;
+    return st;
+  }
+
+  @override
+  Future<void> detachForExit() async => detached = true;
 
   @override
   Future<void> dispose() async {}

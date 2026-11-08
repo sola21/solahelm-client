@@ -22,6 +22,7 @@ String _statusText(S s, LinkStatus status) => switch (status) {
       LinkStatus.disconnected => s.statusDisconnected,
       LinkStatus.connecting => s.statusConnecting,
       LinkStatus.connected => s.statusConnected,
+      LinkStatus.disconnecting => s.statusDisconnecting,
     };
 
 String _modeText(S s, AppState st, ProxyMode m) => switch (m) {
@@ -116,7 +117,7 @@ class _WideHome extends StatelessWidget {
     final sub = st.subscription;
     final node = st.node;
     final connected = st.status == LinkStatus.connected;
-    final busy = st.status == LinkStatus.connecting;
+    final busy = st.status.busy;
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -150,11 +151,11 @@ class _WideHome extends StatelessWidget {
             height: 40,
             child: connected || busy
                 ? OutlinedButton.icon(
-                    onPressed: st.toggleConnection,
+                    onPressed: busy ? null : st.toggleConnection,
                     icon: busy
                         ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.power_settings_new, size: 18),
-                    label: Text(busy ? s.statusConnecting : s.disconnect),
+                    label: Text(busy ? _statusText(s, st.status) : s.disconnect),
                   )
                 : FilledButton.icon(
                     onPressed: st.toggleConnection,
@@ -262,19 +263,19 @@ class PowerButton extends StatelessWidget {
     final p = context.palette;
     final scheme = Theme.of(context).colorScheme;
     final on = status == LinkStatus.connected;
-    final color = on ? p.success : (status == LinkStatus.connecting ? p.warning : scheme.onSurface);
+    final color = status.busy ? p.muted : (on ? p.success : scheme.onSurface);
     return Semantics(
       button: true,
       label: on ? S.of(context).disconnect : S.of(context).connect,
       child: Material(
-        color: scheme.surface,
+        color: status.busy ? p.panel : scheme.surface,
         shape: CircleBorder(side: BorderSide(color: on ? p.success : p.hairline, width: 2)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap,
+          onTap: status.busy ? null : onTap,
           child: SizedBox.square(
             dimension: 132,
-            child: status == LinkStatus.connecting
+            child: status.busy
                 ? Padding(padding: const EdgeInsets.all(44), child: CircularProgressIndicator(color: color))
                 : Icon(Icons.power_settings_new, size: 52, color: color),
           ),

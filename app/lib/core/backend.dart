@@ -81,8 +81,23 @@ abstract class CoreBackend {
     required CorePref core,
     required ProxyMode mode,
     int port = 0,
+    List<String>? rules,
+    bool rulesReplace = false,
+    Map<String, dynamic>? tuning,
+    List<String>? bypass,
+    bool findProcess = true,
+    String tunStack = 'gvisor',
   });
   Future<CoreStatus> stop();
+
+  /// Checks a config (with optional user rules) without starting it.
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false});
+
+  /// Rules and possible targets of a profile, for the rules editor.
+  Future<ProfileRulesInfo> profileRules(String content);
+
+  /// Rules of the running core (Clash API /rules).
+  Future<List<ProfileRule>> activeRules();
 
   /// Restarts the core process with admin rights (UAC prompt on Windows).
   Future<void> elevate();
@@ -96,6 +111,13 @@ abstract class CoreBackend {
   Future<String?> routingMode();
   Future<void> setRoutingMode(String mode);
   Future<void> closeAllConnections();
+
+  /// Finds a core left running by "exit, keep the core" and takes it over.
+  /// Returns its status, or null when there is none.
+  Future<CoreStatus?> attachExisting();
+
+  /// Lets the core keep running after the app exits.
+  Future<void> detachForExit();
 
   /// Live log lines from the running core; ends when the core stops.
   Stream<LogEntry> logs({String level = 'info'});

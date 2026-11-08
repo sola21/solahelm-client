@@ -538,4 +538,384 @@ class SRu extends S {
   @override
   String get notElevated =>
       'Недостаточно прав для TUN: Windows не разрешил запустить ядро от имени администратора. Подтвердите запрос или выберите «Системный прокси».';
+
+  @override
+  String get navRules => 'Правила';
+
+  @override
+  String get importFile => 'Файл';
+
+  @override
+  String pastedName(String date) {
+    return 'Из буфера $date';
+  }
+
+  @override
+  String get profileAdded => 'Профиль добавлен';
+
+  @override
+  String get menuOpen => 'Открыть и редактировать';
+
+  @override
+  String get menuRules => 'Правила';
+
+  @override
+  String get rename => 'Переименовать';
+
+  @override
+  String get nameLabel => 'Название';
+
+  @override
+  String get sourceFile => 'файл';
+
+  @override
+  String get sourcePasted => 'вставлен';
+
+  @override
+  String get editedBadge => 'изменён вручную';
+
+  @override
+  String get rulesBadge => 'свои правила';
+
+  @override
+  String get check => 'Проверить';
+
+  @override
+  String get save => 'Сохранить';
+
+  @override
+  String get saved => 'Сохранено';
+
+  @override
+  String checkOk(String format, String core) {
+    return 'Конфиг в порядке: $format, ядро $core';
+  }
+
+  @override
+  String checkOkLinks(int n) {
+    return 'Ссылки в порядке: $n прокси, ядро mihomo';
+  }
+
+  @override
+  String get editedWarning =>
+      'Профиль по ссылке: при обновлении подписки правки в тексте будут заменены. Свои правила задавайте в «Правилах», они сохраняются отдельно.';
+
+  @override
+  String get unsavedTitle => 'Изменения не сохранены';
+
+  @override
+  String get discard => 'Не сохранять';
+
+  @override
+  String get rulesEdit => 'Редактировать';
+
+  @override
+  String get rulesActive => 'Действующие правила';
+
+  @override
+  String get rulesOfProfile => 'Правила профиля';
+
+  @override
+  String get rulesNone => 'Правил нет';
+
+  @override
+  String rulesCount(int n) {
+    return 'Правил: $n';
+  }
+
+  @override
+  String get ruleType => 'Тип правила';
+
+  @override
+  String get rulePayload => 'Параметр';
+
+  @override
+  String get ruleTarget => 'Прокси';
+
+  @override
+  String get addTop => 'В начало';
+
+  @override
+  String get addBottom => 'В конец';
+
+  @override
+  String get asText => 'Текстом';
+
+  @override
+  String get asList => 'Списком';
+
+  @override
+  String get rulesHintReplace =>
+      'Список целиком заменяет правила профиля и хранится отдельно от подписки: обновление его не сбросит.';
+
+  @override
+  String get rulesHintPrepend =>
+      'Профиль sing-box: ваши правила встают перед правилами профиля. Правила самого профиля ниже, они только для чтения.';
+
+  @override
+  String get resetRules => 'Вернуть правила профиля';
+
+  @override
+  String get profileRulesReadonly => 'Правила профиля (только чтение)';
+
+  @override
+  String get searchRules => 'Поиск правил';
+
+  @override
+  String ruleInvalid(int n, String line) {
+    return 'Неверное правило в строке $n: $line';
+  }
+
+  @override
+  String get rulesSaved => 'Правила сохранены';
+
+  @override
+  String get payloadEmpty => 'Введите параметр';
+
+  @override
+  String get addRuleFor => 'Правило';
+
+  @override
+  String get ruleDirect => 'Напрямую';
+
+  @override
+  String get ruleProxy => 'Через VPN';
+
+  @override
+  String get ruleReject => 'Блокировать';
+
+  @override
+  String ruleAddedFor(String what) {
+    return 'Правило для $what добавлено';
+  }
+
+  @override
+  String rulesEditorTitle(String name) {
+    return 'Правила: $name';
+  }
+
+  @override
+  String get rulesNotConnectedHint =>
+      'Показаны правила профиля. Подключитесь, чтобы видеть правила, которые применило ядро.';
+
+  @override
+  String get formatLinksShort => 'Ссылки';
+
+  @override
+  String get statusDisconnecting => 'Отключение…';
+
+  @override
+  String get trayRestart => 'Перезапустить';
+
+  @override
+  String get settingsConnection => 'Подключение и TUN';
+
+  @override
+  String get settingsConnectionHint =>
+      'Стек и маршруты TUN, исключения системного прокси, порты, доступ из локальной сети';
+
+  @override
+  String get settingsCoreAdv => 'Ядро';
+
+  @override
+  String get settingsCoreAdvHint =>
+      'IPv6, уровень логов, определение процессов, версии ядер';
+
+  @override
+  String get reapplyHint => 'Изменения применятся после переподключения.';
+
+  @override
+  String get reapply => 'Переподключить';
+
+  @override
+  String get secTun => 'TUN';
+
+  @override
+  String get manageTun => 'Управлять настройками TUN';
+
+  @override
+  String get manageTunOff =>
+      'Используются настройки профиля (стек gVisor, без запросов брандмауэра).';
+
+  @override
+  String get tunStack => 'Стек';
+
+  @override
+  String get tunStackHint =>
+      'gVisor не открывает портов и не вызывает запрос брандмауэра. Mixed и System быстрее, но Windows может спросить разрешение.';
+
+  @override
+  String get strictRoute => 'Строгая маршрутизация';
+
+  @override
+  String get strictRouteHint => 'Не даёт DNS-запросам уходить мимо туннеля.';
+
+  @override
+  String get mtu => 'MTU';
+
+  @override
+  String get routeExclude => 'Исключить сети из TUN';
+
+  @override
+  String get routeExcludeHint =>
+      'Эти сети идут напрямую, мимо туннеля: локальная сеть, RDP, принтеры.';
+
+  @override
+  String get addNetwork => 'Добавить сеть';
+
+  @override
+  String get networkHint => '192.168.1.0/24';
+
+  @override
+  String get secSysProxy => 'Системный прокси';
+
+  @override
+  String get proxyBypass => 'Исключения системного прокси';
+
+  @override
+  String get proxyBypassHint =>
+      'Адреса, к которым программы обращаются напрямую. Можно маски: 192.168.*, *.local, <local>.';
+
+  @override
+  String get addException => 'Добавить исключение';
+
+  @override
+  String get restoreDefaults => 'Стандартный список';
+
+  @override
+  String get secPorts => 'Порты';
+
+  @override
+  String get mixedPort => 'Смешанный порт (HTTP + SOCKS)';
+
+  @override
+  String get mixedPortHint =>
+      'Если порт занят, будет взят следующий свободный.';
+
+  @override
+  String get allowLan => 'Разрешить подключения из локальной сети';
+
+  @override
+  String get allowLanHint =>
+      'Другие устройства смогут использовать прокси этого компьютера. Windows может спросить разрешение брандмауэра.';
+
+  @override
+  String lanAddresses(String list) {
+    return 'Адреса для других устройств: $list';
+  }
+
+  @override
+  String get ipv6 => 'IPv6';
+
+  @override
+  String get ipv6Profile => 'Из профиля';
+
+  @override
+  String get ipv6On => 'Вкл';
+
+  @override
+  String get ipv6Off => 'Выкл';
+
+  @override
+  String get logLevel => 'Уровень логов';
+
+  @override
+  String get logLevelProfile => 'Из профиля';
+
+  @override
+  String get findProcess => 'Определять процессы';
+
+  @override
+  String get findProcessHint =>
+      'Нужно для группировки соединений и правил PROCESS-NAME. Отключите, если важна каждая доля процессора.';
+
+  @override
+  String get coresBuiltIn =>
+      'Ядра встроены в клиент и обновляются вместе с ним.';
+
+  @override
+  String get invalidCidr => 'Нужна сеть вида 192.168.1.0/24';
+
+  @override
+  String get invalidPort => 'Порт от 1 до 65535';
+
+  @override
+  String get invalidMtu => 'MTU от 576 до 65535';
+
+  @override
+  String get secDns => 'DNS';
+
+  @override
+  String get dnsOverride => 'Свои DNS-серверы (профили mihomo)';
+
+  @override
+  String get dnsOverrideHint =>
+      'Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.';
+
+  @override
+  String get dnsRemote => 'Через VPN';
+
+  @override
+  String get dnsRemoteHint =>
+      'Для всех имён. Шифрованный DNS: https://…, tls://…';
+
+  @override
+  String get dnsDirect => 'Напрямую';
+
+  @override
+  String get dnsDirectHint =>
+      'Только чтобы найти сами VPN-серверы и для прямого трафика. Обычные IP-адреса.';
+
+  @override
+  String get invalidResolver => 'Нужен IP или адрес вида https://…/dns-query';
+
+  @override
+  String get trayExitKeepCore => 'Выйти, оставив VPN включённым';
+
+  @override
+  String get toggleHotkey => 'Горячая клавиша вкл./выкл. VPN';
+
+  @override
+  String get hotkeyNone => 'Не задана';
+
+  @override
+  String get hotkeySet => 'Задать';
+
+  @override
+  String get hotkeyPress =>
+      'Нажмите сочетание клавиш, например Ctrl + Alt + V. Оно работает, даже когда окно скрыто.';
+
+  @override
+  String get updates => 'Обновления';
+
+  @override
+  String get checkUpdates => 'Проверять обновления при запуске';
+
+  @override
+  String get checkNow => 'Проверить';
+
+  @override
+  String get updateLatest => 'У вас последняя версия';
+
+  @override
+  String get updateNoReleases => 'Релизов пока нет';
+
+  @override
+  String updateAvailable(String v) {
+    return 'Доступна версия $v';
+  }
+
+  @override
+  String updateTo(String v) {
+    return 'Обновить до $v';
+  }
+
+  @override
+  String updateDownloading(int p) {
+    return 'Загрузка обновления… $p%';
+  }
+
+  @override
+  String get updateHint =>
+      'Клиент скачает архив (через VPN, если он включён), закроется, обновится и запустится снова. Настройки и подписки сохранятся.';
 }

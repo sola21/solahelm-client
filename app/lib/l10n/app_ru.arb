@@ -347,5 +347,201 @@
       }
     }
   },
-  "notElevated": "Недостаточно прав для TUN: Windows не разрешил запустить ядро от имени администратора. Подтвердите запрос или выберите «Системный прокси»."
+  "notElevated": "Недостаточно прав для TUN: Windows не разрешил запустить ядро от имени администратора. Подтвердите запрос или выберите «Системный прокси».",
+  "navRules": "Правила",
+  "importFile": "Файл",
+  "pastedName": "Из буфера {date}",
+  "profileAdded": "Профиль добавлен",
+  "menuOpen": "Открыть и редактировать",
+  "menuRules": "Правила",
+  "rename": "Переименовать",
+  "nameLabel": "Название",
+  "sourceFile": "файл",
+  "sourcePasted": "вставлен",
+  "editedBadge": "изменён вручную",
+  "rulesBadge": "свои правила",
+  "check": "Проверить",
+  "save": "Сохранить",
+  "saved": "Сохранено",
+  "checkOk": "Конфиг в порядке: {format}, ядро {core}",
+  "checkOkLinks": "Ссылки в порядке: {n} прокси, ядро mihomo",
+  "editedWarning": "Профиль по ссылке: при обновлении подписки правки в тексте будут заменены. Свои правила задавайте в «Правилах», они сохраняются отдельно.",
+  "unsavedTitle": "Изменения не сохранены",
+  "discard": "Не сохранять",
+  "rulesEdit": "Редактировать",
+  "rulesActive": "Действующие правила",
+  "rulesOfProfile": "Правила профиля",
+  "rulesNone": "Правил нет",
+  "rulesCount": "Правил: {n}",
+  "ruleType": "Тип правила",
+  "rulePayload": "Параметр",
+  "ruleTarget": "Прокси",
+  "addTop": "В начало",
+  "addBottom": "В конец",
+  "asText": "Текстом",
+  "asList": "Списком",
+  "rulesHintReplace": "Список целиком заменяет правила профиля и хранится отдельно от подписки: обновление его не сбросит.",
+  "rulesHintPrepend": "Профиль sing-box: ваши правила встают перед правилами профиля. Правила самого профиля ниже, они только для чтения.",
+  "resetRules": "Вернуть правила профиля",
+  "profileRulesReadonly": "Правила профиля (только чтение)",
+  "searchRules": "Поиск правил",
+  "ruleInvalid": "Неверное правило в строке {n}: {line}",
+  "rulesSaved": "Правила сохранены",
+  "payloadEmpty": "Введите параметр",
+  "addRuleFor": "Правило",
+  "ruleDirect": "Напрямую",
+  "ruleProxy": "Через VPN",
+  "ruleReject": "Блокировать",
+  "ruleAddedFor": "Правило для {what} добавлено",
+  "rulesEditorTitle": "Правила: {name}",
+  "rulesNotConnectedHint": "Показаны правила профиля. Подключитесь, чтобы видеть правила, которые применило ядро.",
+  "@pastedName": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@checkOk": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      },
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "@checkOkLinks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@rulesCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@ruleInvalid": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "line": {
+        "type": "String"
+      }
+    }
+  },
+  "@ruleAddedFor": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "@rulesEditorTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "formatLinksShort": "Ссылки",
+  "statusDisconnecting": "Отключение…",
+  "trayRestart": "Перезапустить",
+  "settingsConnection": "Подключение и TUN",
+  "settingsConnectionHint": "Стек и маршруты TUN, исключения системного прокси, порты, доступ из локальной сети",
+  "settingsCoreAdv": "Ядро",
+  "settingsCoreAdvHint": "IPv6, уровень логов, определение процессов, версии ядер",
+  "reapplyHint": "Изменения применятся после переподключения.",
+  "reapply": "Переподключить",
+  "secTun": "TUN",
+  "manageTun": "Управлять настройками TUN",
+  "manageTunOff": "Используются настройки профиля (стек gVisor, без запросов брандмауэра).",
+  "tunStack": "Стек",
+  "tunStackHint": "gVisor не открывает портов и не вызывает запрос брандмауэра. Mixed и System быстрее, но Windows может спросить разрешение.",
+  "strictRoute": "Строгая маршрутизация",
+  "strictRouteHint": "Не даёт DNS-запросам уходить мимо туннеля.",
+  "mtu": "MTU",
+  "routeExclude": "Исключить сети из TUN",
+  "routeExcludeHint": "Эти сети идут напрямую, мимо туннеля: локальная сеть, RDP, принтеры.",
+  "addNetwork": "Добавить сеть",
+  "networkHint": "192.168.1.0/24",
+  "secSysProxy": "Системный прокси",
+  "proxyBypass": "Исключения системного прокси",
+  "proxyBypassHint": "Адреса, к которым программы обращаются напрямую. Можно маски: 192.168.*, *.local, <local>.",
+  "addException": "Добавить исключение",
+  "restoreDefaults": "Стандартный список",
+  "secPorts": "Порты",
+  "mixedPort": "Смешанный порт (HTTP + SOCKS)",
+  "mixedPortHint": "Если порт занят, будет взят следующий свободный.",
+  "allowLan": "Разрешить подключения из локальной сети",
+  "allowLanHint": "Другие устройства смогут использовать прокси этого компьютера. Windows может спросить разрешение брандмауэра.",
+  "lanAddresses": "Адреса для других устройств: {list}",
+  "ipv6": "IPv6",
+  "ipv6Profile": "Из профиля",
+  "ipv6On": "Вкл",
+  "ipv6Off": "Выкл",
+  "logLevel": "Уровень логов",
+  "logLevelProfile": "Из профиля",
+  "findProcess": "Определять процессы",
+  "findProcessHint": "Нужно для группировки соединений и правил PROCESS-NAME. Отключите, если важна каждая доля процессора.",
+  "coresBuiltIn": "Ядра встроены в клиент и обновляются вместе с ним.",
+  "invalidCidr": "Нужна сеть вида 192.168.1.0/24",
+  "invalidPort": "Порт от 1 до 65535",
+  "invalidMtu": "MTU от 576 до 65535",
+  "@lanAddresses": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "secDns": "DNS",
+  "dnsOverride": "Свои DNS-серверы (профили mihomo)",
+  "dnsOverrideHint": "Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.",
+  "dnsRemote": "Через VPN",
+  "dnsRemoteHint": "Для всех имён. Шифрованный DNS: https://…, tls://…",
+  "dnsDirect": "Напрямую",
+  "dnsDirectHint": "Только чтобы найти сами VPN-серверы и для прямого трафика. Обычные IP-адреса.",
+  "invalidResolver": "Нужен IP или адрес вида https://…/dns-query",
+  "trayExitKeepCore": "Выйти, оставив VPN включённым",
+  "toggleHotkey": "Горячая клавиша вкл./выкл. VPN",
+  "hotkeyNone": "Не задана",
+  "hotkeySet": "Задать",
+  "hotkeyPress": "Нажмите сочетание клавиш, например Ctrl + Alt + V. Оно работает, даже когда окно скрыто.",
+  "updates": "Обновления",
+  "checkUpdates": "Проверять обновления при запуске",
+  "checkNow": "Проверить",
+  "updateLatest": "У вас последняя версия",
+  "updateNoReleases": "Релизов пока нет",
+  "updateAvailable": "Доступна версия {v}",
+  "updateTo": "Обновить до {v}",
+  "updateDownloading": "Загрузка обновления… {p}%",
+  "updateHint": "Клиент скачает архив (через VPN, если он включён), закроется, обновится и запустится снова. Настройки и подписки сохранятся.",
+  "@updateAvailable": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "@updateTo": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
+  "@updateDownloading": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  }
 }

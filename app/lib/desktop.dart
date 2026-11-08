@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:flutter/material.dart' show ThemeMode, WidgetsBinding, WidgetsBindingObserver;
+import 'package:flutter/services.dart';
+
+import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -11,7 +16,7 @@ import 'models.dart';
 import 'state/app_state.dart';
 
 /// Tray icon, close-to-tray, autostart and silent start on desktop.
-class DesktopShell with TrayListener, WindowListener {
+class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
   DesktopShell(this.state);
 
   final AppState state;
@@ -23,7 +28,16 @@ class DesktopShell with TrayListener, WindowListener {
   /// Command-line flag used by the autostart entry.
   static const minimizedFlag = '--minimized';
 
+  /// The running shell (one per app), for actions that must quit the app.
+  static DesktopShell? instance;
+
+  /// Starts the downloaded update's installer and quits so it can run.
+  Future<void> installUpdateAndExit() async {
+    if (await state.downloadAndInstallUpdate()) await exitApp();
+  }
+
   Future<void> init({required bool startHidden}) async {
+    instance = this;
     await windowManager.ensureInitialized();
     await windowManager.setPreventClose(true);
     windowManager.addListener(this);
@@ -41,6 +55,12 @@ class DesktopShell with TrayListener, WindowListener {
     } catch (_) {}
     _lastAutostart = state.settings.launchAtStartup;
     state.settings.addListener(_onSettings);
+    state.settings.addListener(_applyTheme);
+    state.settings.addListener(_applyHotkey);
+    await hotKeyManager.unregisterAll();
+    await _applyHotkey();
+    WidgetsBinding.instance.addObserver(this);
+    _applyTheme();
 
     await _refreshTray(force: true);
     state.addListener(_refreshTray);
@@ -66,6 +86,48 @@ class DesktopShell with TrayListener, WindowListener {
     } catch (_) {}
   }
 
+  String? _hotkeyJson;
+
+  /// (Re)registers the global "toggle VPN" hotkey from the settings.
+  Future<void> _applyHotkey() async {
+    final cfg = state.settings.toggleHotkey;
+    final json = cfg == null ? null : jsonEncode(cfg);
+    if (json == _hotkeyJson) return;
+    _hotkeyJson = json;
+    try {
+      await hotKeyManager.unregisterAll();
+      if (cfg == null) return;
+      await hotKeyManager.register(
+        HotKey.fromJson(cfg),
+        keyDownHandler: (_) => state.toggleConnection(),
+      );
+    } catch (_) {
+      // Taken by another app or invalid: the setting stays, nothing is bound.
+    }
+  }
+
+  static const _window = MethodChannel('solahelm/window');
+  bool? _lastDark;
+
+  /// Tray menu and title bar follow the app's theme (the native runner
+  /// handles "solahelm/window"; other platforms ignore it).
+  Future<void> _applyTheme() async {
+    final dark = switch (state.settings.themeMode) {
+      ThemeMode.dark => true,
+      ThemeMode.light => false,
+      ThemeMode.system => PlatformDispatcher.instance.platformBrightness == Brightness.dark,
+    };
+    if (dark == _lastDark) return;
+    _lastDark = dark;
+    if (!Platform.isWindows) return;
+    try {
+      await _window.invokeMethod<void>('setDarkMode', dark);
+    } catch (_) {}
+  }
+
+  @override
+  void didChangePlatformBrightness() => _applyTheme();
+
   Future<void> showWindow() async {
     await windowManager.show();
     if (await windowManager.isMinimized()) await windowManager.restore();
@@ -87,6 +149,49 @@ class DesktopShell with TrayListener, WindowListener {
     await windowManager.destroy();
     exit(0);
   }
+
+  /// Quits but leaves the core and the VPN running; the next start takes over.
+  Future<void> exitKeepCore() async {
+    if (_exiting) return;
+    try {
+      await state.detachForExit();
+    } catch (_) {
+      return; // couldn't detach: stay, rather than leave an orphan or kill the VPN
+    }
+    _exiting = true;
+    state.removeListener(_refreshTray);
+    try {
+      await trayManager.destroy();
+    } catch (_) {}
+    await windowManager.setPreventClose(false);
+    await windowManager.destroy();
+    exit(0);
+  }
+
+  /// Starts a fresh copy of the app and quits this one: the new copy waits
+  /// for this process to exit (the single-instance lock), then reconnects if
+  /// we were connected and stays in the tray if the window was hidden.
+  Future<void> restartApp() async {
+    if (_exiting) return;
+    final wasConnected = state.status == LinkStatus.connected;
+    final visible = await windowManager.isVisible();
+    try {
+      await Process.start(
+        Platform.resolvedExecutable,
+        ['$waitPidFlag$pid', if (wasConnected) connectFlag, if (!visible) minimizedFlag],
+        mode: ProcessStartMode.detached,
+      );
+    } catch (_) {
+      return; // could not start a new copy: keep this one
+    }
+    await exitApp();
+  }
+
+  /// Passed by restartApp: wait for this pid before taking the instance lock.
+  static const waitPidFlag = '--wait-pid=';
+
+  /// Passed by restartApp: connect right after start.
+  static const connectFlag = '--connect';
 
   // ---- window ----
 
@@ -144,6 +249,7 @@ class DesktopShell with TrayListener, WindowListener {
       state.settings.languageCode,
       state.subscription?.id,
       state.subscriptions.length,
+      state.update?.version,
       for (final g in selectors) '${g.name}=${g.now}:${g.members.map((m) => _delay(s, m)).join()}',
     ].join('|');
     if (!force && sig == _menuSignature) return;
@@ -153,6 +259,7 @@ class DesktopShell with TrayListener, WindowListener {
       LinkStatus.connected => s.statusConnected,
       LinkStatus.connecting => s.statusConnecting,
       LinkStatus.disconnected => s.statusDisconnected,
+      LinkStatus.disconnecting => s.statusDisconnecting,
     };
     final node = state.node;
     final tip = [
@@ -165,7 +272,8 @@ class DesktopShell with TrayListener, WindowListener {
       MenuItem(label: s.trayShow, onClick: (_) => showWindow()),
       MenuItem.separator(),
       MenuItem(
-        label: connected || state.status == LinkStatus.connecting ? s.disconnect : s.connect,
+        label: state.status.busy ? status : (connected ? s.disconnect : s.connect),
+        disabled: state.status.busy,
         onClick: (_) => state.toggleConnection(),
       ),
       MenuItem.submenu(
@@ -216,6 +324,10 @@ class DesktopShell with TrayListener, WindowListener {
         ),
       ],
       MenuItem.separator(),
+      if (state.update != null)
+        MenuItem(label: s.updateTo(state.update!.version), onClick: (_) => installUpdateAndExit()),
+      MenuItem(label: s.trayRestart, onClick: (_) => restartApp()),
+      if (connected) MenuItem(label: s.trayExitKeepCore, onClick: (_) => exitKeepCore()),
       MenuItem(label: s.trayExit, onClick: (_) => exitApp()),
     ];
 

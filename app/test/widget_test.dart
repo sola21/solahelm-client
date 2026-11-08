@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:solahelm_client/core/backend.dart';
 import 'package:solahelm_client/core/fake_backend.dart';
 import 'package:solahelm_client/main.dart';
 import 'package:solahelm_client/models.dart';
+import 'package:solahelm_client/screens/home.dart';
 import 'package:solahelm_client/state/app_state.dart';
 import 'package:solahelm_client/state/settings.dart';
 import 'package:solahelm_client/state/sub_store.dart';
@@ -37,6 +41,9 @@ Future<void> addSub(WidgetTester t, String url) async {
   await t.enterText(find.byType(TextField), url);
   await t.tap(find.byType(FilledButton).last);
   await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+  await t.pumpAndSettle();
+  // The "added" snackbar would cover buttons at the bottom of the next screens.
+  t.state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger)).clearSnackBars();
   await t.pumpAndSettle();
 }
 
@@ -178,6 +185,220 @@ void main() {
     await finish(t, st);
   });
 
+  testWidgets('paste config text from the clipboard creates a profile', (t) async {
+    final st = newState(lang: 'en');
+    await pumpApp(t, st, const Size(1200, 900));
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') return {'text': 'proxies: []\nrules:\n  - MATCH,DIRECT\n'};
+      return null;
+    });
+    addTearDown(() => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await t.tap(find.text('Subscriptions').first);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Paste'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await t.pumpAndSettle();
+    expect(st.subscriptions.single.source, SubSource.pasted);
+    expect(st.subscriptions.single.core, CoreKind.mihomo);
+    expect(find.text('pasted'), findsOneWidget);
+  });
+
+  test('import a config file', () async {
+    final dir = await Directory.systemTemp.createTemp('solahelm-import-');
+    addTearDown(() => dir.delete(recursive: true));
+    final f = File('${dir.path}${Platform.pathSeparator}my.json')..writeAsStringSync('{"outbounds":[]}');
+    final st = newState();
+    await st.init();
+    expect(await st.importFile(f.path), isNull);
+    expect(st.subscriptions.single.name, 'my.json');
+    expect(st.subscriptions.single.source, SubSource.file);
+    expect(st.subscriptions.single.core, CoreKind.singBox);
+    f.writeAsStringSync('broken');
+    expect(await st.importFile(f.path), isNotNull);
+  });
+
+  testWidgets('profile editor checks and saves edits', (t) async {
+    final st = newState(lang: 'en');
+    await pumpApp(t, st, const Size(1200, 900));
+    await t.tap(find.text('Subscriptions').first);
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    final id = st.subscriptions.single.id;
+
+    await t.tap(find.byIcon(Icons.more_vert));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Open and edit'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    expect(find.text('proxies: []'), findsOneWidget);
+
+    await t.enterText(find.byType(TextField), 'broken config');
+    await t.tap(find.text('Check'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Error:'), findsOneWidget);
+
+    await t.enterText(find.byType(TextField), 'proxies: []\nrules: []\n');
+    await t.tap(find.text('Save'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    expect(await st.profileContent(id), 'proxies: []\nrules: []\n');
+    expect(st.subscriptions.single.edited, isTrue);
+  });
+
+  testWidgets('rules editor: add to top, delete, save; rules reach the core', (t) async {
+    final st = newState(lang: 'en');
+    await pumpApp(t, st, const Size(1300, 900));
+    await t.tap(find.text('Subscriptions').first);
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+
+    await t.tap(find.text('Rules').first);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    expect(find.text('ya.ru'), findsOneWidget); // profile rules shown while disconnected
+
+    await t.tap(find.text('Edit'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    expect(find.text('Rules: panel.example.org'), findsOneWidget);
+
+    await t.enterText(find.widgetWithText(TextField, 'Value'), 'telegram.org');
+    await t.tap(find.text('To top'));
+    await t.pumpAndSettle();
+    // delete GEOIP,RU
+    final geo = find.ancestor(of: find.text('RU'), matching: find.byType(Card));
+    await t.tap(find.descendant(of: geo, matching: find.byIcon(Icons.delete_outline)));
+    await t.pumpAndSettle();
+    await t.tap(find.widgetWithText(FilledButton, 'Save'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await t.pumpAndSettle();
+
+    final sub = st.subscriptions.single;
+    expect(sub.rules, ['DOMAIN-SUFFIX,telegram.org,DIRECT', 'DOMAIN-SUFFIX,ya.ru,DIRECT', 'MATCH,proxy']);
+    expect(sub.rulesReplace, isTrue);
+
+    await t.runAsync(st.connect);
+    await t.pumpAndSettle();
+    expect((st.backend as FakeBackend).lastRules, sub.rules);
+    await finish(t, st);
+  });
+
+  testWidgets('rules editor text mode reports a bad line', (t) async {
+    final st = newState(lang: 'en');
+    await pumpApp(t, st, const Size(1300, 900));
+    await t.tap(find.text('Subscriptions').first);
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    await t.tap(find.text('Rules').first);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Edit'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await t.pumpAndSettle();
+    await t.tap(find.text('As text'));
+    await t.pumpAndSettle();
+    final editor = find.byWidgetPredicate((w) => w is TextField && w.expands);
+    await t.enterText(editor, '- DOMAIN,a.com,DIRECT\n- nonsense\n');
+    await t.tap(find.widgetWithText(FilledButton, 'Save'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Bad rule on line 2'), findsOneWidget);
+    expect(st.subscriptions.single.rules, isNull);
+  });
+
+  testWidgets('disconnect does not hang on a silent log stream; button is disabled meanwhile', (t) async {
+    final st = newState(lang: 'en');
+    final fake = st.backend as FakeBackend
+      ..hangLogs = true
+      ..stopDelay = const Duration(milliseconds: 300);
+    await pumpApp(t, st, const Size(390, 844));
+    await t.tap(find.text('Subscriptions'));
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    await t.tap(find.text('Home'));
+    await t.pumpAndSettle();
+    await t.runAsync(st.connect);
+    await t.pumpAndSettle();
+    expect(st.status, LinkStatus.connected);
+
+    final done = st.disconnect();
+    await t.pump();
+    expect(st.status, LinkStatus.disconnecting);
+    expect(find.text('Disconnecting…'), findsOneWidget);
+    final ink = t.widget<InkWell>(find.descendant(of: find.byType(PowerButton), matching: find.byType(InkWell)));
+    expect(ink.onTap, isNull); // greyed out, can't be pressed twice
+    await t.tap(find.byType(PowerButton), warnIfMissed: false);
+    var finished = false;
+    unawaited(done.then((_) => finished = true));
+    // The old code awaited the log stream's cancel, which never completes here.
+    await t.pump(const Duration(seconds: 1));
+    await t.pumpAndSettle();
+    expect(finished, isTrue);
+    expect(st.status, LinkStatus.disconnected);
+    expect(fake.lastRules, isNull);
+  });
+
+  testWidgets('connection settings reach the core; changes while connected offer a reconnect', (t) async {
+    final st = newState(lang: 'en');
+    final fake = st.backend as FakeBackend;
+    await pumpApp(t, st, const Size(1200, 1000));
+    await t.tap(find.text('Subscriptions').first);
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+
+    await t.tap(find.text('Settings').first);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Connection and TUN').last);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Manage TUN settings'));
+    await t.pumpAndSettle();
+    expect(st.settings.core.manageTun, isTrue);
+
+    final field = find.widgetWithText(TextField, '192.168.1.0/24');
+    await t.enterText(field, '10.1.2.3');
+    await t.tap(find.text('Add network'));
+    await t.pumpAndSettle();
+    expect(find.text('Expected a network like 192.168.1.0/24'), findsOneWidget);
+    await t.enterText(field, '10.77.0.0/16');
+    await t.tap(find.text('Add network'));
+    await t.pumpAndSettle();
+    expect(st.settings.core.routeExclude, contains('10.77.0.0/16'));
+
+    await t.runAsync(st.connect);
+    await t.pumpAndSettle();
+    expect(fake.lastTuning?['routeExclude'], contains('10.77.0.0/16'));
+    expect(fake.lastTuning?['strictRoute'], isTrue);
+    expect(st.needsReapply, isFalse);
+
+    await t.ensureVisible(find.text('Allow connections from the LAN'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Allow connections from the LAN'));
+    await t.pumpAndSettle();
+    expect(st.needsReapply, isTrue);
+    expect(find.text('Reconnect'), findsOneWidget);
+    await t.tap(find.text('Reconnect'));
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await t.pumpAndSettle();
+    expect(fake.lastTuning?['allowLan'], isTrue);
+    expect(st.needsReapply, isFalse);
+    expect(find.text('Reconnect'), findsNothing);
+    await finish(t, st);
+  });
+
+  testWidgets('a core left running is taken over on start', (t) async {
+    final st = newState(lang: 'en');
+    (st.backend as FakeBackend).leftRunning =
+        CoreStatus(running: true, core: CoreKind.mihomo, mode: ProxyMode.portOnly, port: 7890, startedAt: DateTime.now());
+    await st.init();
+    await t.runAsync(st.attachRunningCore);
+    await t.pumpWidget(SolaHelmApp(state: st));
+    await t.pumpAndSettle();
+    expect(st.status, LinkStatus.connected);
+    expect(find.text('Disconnect'), findsOneWidget);
+    await t.runAsync(st.detachForExit);
+    expect((st.backend as FakeBackend).detached, isTrue);
+    await finish(t, st);
+  });
+
   testWidgets('settings switch language, theme and core', (t) async {
     final st = newState();
     await pumpApp(t, st, const Size(1200, 900));
@@ -209,6 +430,7 @@ void main() {
     a.setLanguage('en');
     a.setCorePref(CorePref.mihomo);
     a.setProxyMode(ProxyMode.systemProxy);
+    a.setCore(a.core.copyWith(manageTun: true, tunStack: 'system', mtu: 1400, routeExclude: ['10.9.0.0/16'], ipv6: 'off'));
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
     final b = await Settings.load(file);
@@ -216,6 +438,11 @@ void main() {
     expect(b.languageCode, 'en');
     expect(b.corePref, CorePref.mihomo);
     expect(b.proxyMode, ProxyMode.systemProxy);
+    expect(b.core.manageTun, isTrue);
+    expect(b.core.tunStack, 'system');
+    expect(b.core.mtu, 1400);
+    expect(b.core.routeExclude, ['10.9.0.0/16']);
+    expect(b.core.tuning(), {'strictRoute': true, 'mtu': 1400, 'routeExclude': ['10.9.0.0/16'], 'ipv6': false});
 
     await file.writeAsString('{broken');
     final c = await Settings.load(file);

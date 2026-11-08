@@ -45,6 +45,142 @@ Directory? appDataDir() {
   }
 }
 
+/// Connection and core settings applied on top of every profile.
+@immutable
+class CoreSettings {
+  const CoreSettings({
+    this.manageTun = false,
+    this.tunStack = 'gvisor',
+    this.strictRoute = true,
+    this.mtu = 1500,
+    this.routeExclude = defaultRouteExclude,
+    this.proxyBypass = defaultProxyBypass,
+    this.mixedPort = 7890,
+    this.allowLan = false,
+    this.ipv6 = 'profile',
+    this.logLevel = '',
+    this.findProcess = true,
+    this.dnsOverride = false,
+    this.dnsRemote = defaultDnsRemote,
+    this.dnsDirect = defaultDnsDirect,
+  });
+
+  static const defaultDnsRemote = ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'];
+  static const defaultDnsDirect = ['77.88.8.8', '1.1.1.1'];
+
+  static const defaultRouteExclude = [
+    '10.0.0.0/8', '100.64.0.0/10', '169.254.0.0/16', '172.16.0.0/12', '192.168.0.0/16',
+  ];
+  static const defaultProxyBypass = [
+    'localhost', '127.*', '10.*', '172.16.*', '172.17.*', '172.18.*', '172.19.*', '172.2*', '172.30.*',
+    '172.31.*', '192.168.*', '<local>',
+  ];
+
+  final bool manageTun; // off: the profile's TUN settings (only the stack is ours)
+  final String tunStack; // gvisor, mixed, system
+  final bool strictRoute;
+  final int mtu;
+  final List<String> routeExclude; // CIDRs that bypass the tunnel
+  final List<String> proxyBypass; // system proxy exceptions
+  final int mixedPort; // preferred local port; the next free one is used if busy
+  final bool allowLan; // let other devices use the local port
+  final String ipv6; // profile, on, off
+  final String logLevel; // '' = profile, debug, info, warning, error, silent
+  final bool findProcess;
+  final bool dnsOverride; // replace a mihomo profile's DNS
+  final List<String> dnsRemote; // through the tunnel (respect-rules)
+  final List<String> dnsDirect; // for proxy servers and direct traffic
+
+  CoreSettings copyWith({
+    bool? manageTun,
+    String? tunStack,
+    bool? strictRoute,
+    int? mtu,
+    List<String>? routeExclude,
+    List<String>? proxyBypass,
+    int? mixedPort,
+    bool? allowLan,
+    String? ipv6,
+    String? logLevel,
+    bool? findProcess,
+    bool? dnsOverride,
+    List<String>? dnsRemote,
+    List<String>? dnsDirect,
+  }) =>
+      CoreSettings(
+        manageTun: manageTun ?? this.manageTun,
+        tunStack: tunStack ?? this.tunStack,
+        strictRoute: strictRoute ?? this.strictRoute,
+        mtu: mtu ?? this.mtu,
+        routeExclude: routeExclude ?? this.routeExclude,
+        proxyBypass: proxyBypass ?? this.proxyBypass,
+        mixedPort: mixedPort ?? this.mixedPort,
+        allowLan: allowLan ?? this.allowLan,
+        ipv6: ipv6 ?? this.ipv6,
+        logLevel: logLevel ?? this.logLevel,
+        findProcess: findProcess ?? this.findProcess,
+        dnsOverride: dnsOverride ?? this.dnsOverride,
+        dnsRemote: dnsRemote ?? this.dnsRemote,
+        dnsDirect: dnsDirect ?? this.dnsDirect,
+      );
+
+  /// What the core gets as "tuning".
+  Map<String, dynamic> tuning() => {
+        if (manageTun) ...{
+          'strictRoute': strictRoute,
+          'mtu': mtu,
+          'routeExclude': routeExclude,
+        },
+        if (ipv6 != 'profile') 'ipv6': ipv6 == 'on',
+        if (logLevel.isNotEmpty) 'logLevel': logLevel,
+        if (allowLan) 'allowLan': true,
+        if (dnsOverride && dnsRemote.isNotEmpty && dnsDirect.isNotEmpty)
+          'dns': {'remote': dnsRemote, 'direct': dnsDirect},
+      };
+
+  Map<String, dynamic> toJson() => {
+        'manageTun': manageTun,
+        'tunStack': tunStack,
+        'strictRoute': strictRoute,
+        'mtu': mtu,
+        'routeExclude': routeExclude,
+        'proxyBypass': proxyBypass,
+        'mixedPort': mixedPort,
+        'allowLan': allowLan,
+        'ipv6': ipv6,
+        'logLevel': logLevel,
+        'findProcess': findProcess,
+        'dnsOverride': dnsOverride,
+        'dnsRemote': dnsRemote,
+        'dnsDirect': dnsDirect,
+      };
+
+  static CoreSettings fromJson(Object? v) {
+    if (v is! Map) return const CoreSettings();
+    List<String>? list(Object? x) => x is List ? x.map((e) => e.toString()).toList() : null;
+    const d = CoreSettings();
+    final stack = v['tunStack'];
+    final ip6 = v['ipv6'];
+    final log = v['logLevel'];
+    return CoreSettings(
+      manageTun: v['manageTun'] as bool? ?? d.manageTun,
+      tunStack: const ['gvisor', 'mixed', 'system'].contains(stack) ? stack as String : d.tunStack,
+      strictRoute: v['strictRoute'] as bool? ?? d.strictRoute,
+      mtu: (v['mtu'] as num?)?.toInt() ?? d.mtu,
+      routeExclude: list(v['routeExclude']) ?? d.routeExclude,
+      proxyBypass: list(v['proxyBypass']) ?? d.proxyBypass,
+      mixedPort: (v['mixedPort'] as num?)?.toInt() ?? d.mixedPort,
+      allowLan: v['allowLan'] as bool? ?? d.allowLan,
+      ipv6: const ['profile', 'on', 'off'].contains(ip6) ? ip6 as String : d.ipv6,
+      logLevel: const ['', 'debug', 'info', 'warning', 'error', 'silent'].contains(log) ? log as String : d.logLevel,
+      findProcess: v['findProcess'] as bool? ?? d.findProcess,
+      dnsOverride: v['dnsOverride'] as bool? ?? d.dnsOverride,
+      dnsRemote: list(v['dnsRemote']) ?? d.dnsRemote,
+      dnsDirect: list(v['dnsDirect']) ?? d.dnsDirect,
+    );
+  }
+}
+
 /// UI preferences, stored as ui.json in [appDataDir].
 class Settings extends ChangeNotifier {
   Settings({
@@ -56,6 +192,7 @@ class Settings extends ChangeNotifier {
     this.launchAtStartup = false,
     this.startMinimized = false,
     this.autoConnect = false,
+    this.checkUpdates = true,
     this.file,
   });
 
@@ -67,6 +204,14 @@ class Settings extends ChangeNotifier {
   bool launchAtStartup; // mirrors the OS autostart entry
   bool startMinimized; // start hidden in the tray
   bool autoConnect; // connect right after start
+  bool checkUpdates; // look for a new release on start
+  /// Global hotkey that toggles the VPN, as hotkey_manager JSON; null = none.
+  Map<String, dynamic>? toggleHotkey;
+  CoreSettings core = const CoreSettings();
+
+  /// Bumped on every change of [core]; AppState compares it with the value it
+  /// connected with to offer "apply" (a reconnect).
+  int coreRevision = 0;
   final File? file;
 
   Locale? get locale => languageCode == null ? null : Locale(languageCode!);
@@ -91,6 +236,10 @@ class Settings extends ChangeNotifier {
         s.launchAtStartup = m['launchAtStartup'] as bool? ?? false;
         s.startMinimized = m['startMinimized'] as bool? ?? false;
         s.autoConnect = m['autoConnect'] as bool? ?? false;
+        s.checkUpdates = m['checkUpdates'] as bool? ?? true;
+        s.core = CoreSettings.fromJson(m['coreSettings']);
+        final hk = m['toggleHotkey'];
+        s.toggleHotkey = hk is Map ? hk.cast<String, dynamic>() : null;
       }
     } catch (_) {
       // Broken or unreadable file: start with defaults.
@@ -112,6 +261,9 @@ class Settings extends ChangeNotifier {
         'launchAtStartup': launchAtStartup,
         'startMinimized': startMinimized,
         'autoConnect': autoConnect,
+        'checkUpdates': checkUpdates,
+        'coreSettings': core.toJson(),
+        'toggleHotkey': toggleHotkey,
       }));
     } catch (_) {
       // Not fatal: the choice still applies for this session.
@@ -162,6 +314,25 @@ class Settings extends ChangeNotifier {
 
   void setAutoConnect(bool v) {
     autoConnect = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setCore(CoreSettings v) {
+    core = v;
+    coreRevision++;
+    notifyListeners();
+    _save();
+  }
+
+  void setToggleHotkey(Map<String, dynamic>? v) {
+    toggleHotkey = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setCheckUpdates(bool v) {
+    checkUpdates = v;
     notifyListeners();
     _save();
   }

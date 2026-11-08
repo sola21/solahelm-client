@@ -6,6 +6,7 @@ param(
     [string[]]$Names = @('www.google.com', 'api.ipify.org', 'github.com', 'ya.ru', 'youtube.com', 'telegram.org'),
     [string[]]$Types = @('A'),
     [int]$Rounds = 2,
+    [string[]]$Extra = @(),
     [string]$Dir = ''
 )
 if (-not $Dir) { $Dir = Split-Path -Parent $MyInvocation.MyCommand.Path }
@@ -15,8 +16,8 @@ $Types = $Types | ForEach-Object { $_ -split ',' } | Where-Object { $_ }
 $exe = Join-Path $Dir 'corectl.exe'
 $log = Join-Path $Dir 'dns-run.log'
 $p = Start-Process -FilePath $exe -PassThru -NoNewWindow -RedirectStandardError $log -RedirectStandardOutput "$log.out" `
-    -ArgumentList @('run', '-duration', '60s', '-proxy-only', '-port', '17890', '-controller', '127.0.0.1:19090',
-                    '-workdir', (Join-Path $Dir 'work'), $Source)
+    -ArgumentList (@('run', '-duration', '60s', '-proxy-only', '-port', '17890', '-controller', '127.0.0.1:19090') + $Extra + @(
+                    '-workdir', (Join-Path $Dir 'work'), $Source))
 for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 300
     try { Invoke-RestMethod 'http://127.0.0.1:19090/version' -TimeoutSec 2 | Out-Null; break } catch {}

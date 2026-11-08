@@ -75,6 +75,7 @@ class DaemonBackend implements CoreBackend {
     final addr = (await readyFile.readAsString()).trim();
     _base = Uri.parse('http://$addr');
     _secret = secret;
+    await _writeSession();
     try {
       await tmp.delete(recursive: true);
     } catch (_) {}
@@ -96,6 +97,48 @@ class DaemonBackend implements CoreBackend {
     }
   }
 
+  File get _sessionFile => File('$workDir${Platform.pathSeparator}session.json');
+
+  /// Where the running core listens and its secret, so a later copy of the
+  /// app can take it over after "exit, keep the core".
+  Future<void> _writeSession() async {
+    try {
+      await _sessionFile.writeAsString(jsonEncode({'addr': _base!.authority, 'secret': _secret}), flush: true);
+    } catch (_) {}
+  }
+
+  Future<void> _dropSession() async {
+    try {
+      if (await _sessionFile.exists()) await _sessionFile.delete();
+    } catch (_) {}
+  }
+
+  @override
+  Future<CoreStatus?> attachExisting() async {
+    try {
+      if (!await _sessionFile.exists()) return null;
+      final m = jsonDecode(await _sessionFile.readAsString()) as Map<String, dynamic>;
+      _base = Uri.parse('http://${m['addr']}');
+      _secret = m['secret'] as String;
+      final st = await _call('POST', '/attach', {'pid': pid}).timeout(const Duration(seconds: 3));
+      _starting = Future.value(); // the core is up; don't launch another one
+      return _status(st);
+    } catch (_) {
+      _base = null;
+      _secret = '';
+      await _dropSession();
+      return null;
+    }
+  }
+
+  @override
+  Future<void> detachForExit() async {
+    if (_base == null) return;
+    await _call('POST', '/detach').timeout(const Duration(seconds: 3));
+    _process = null; // don't kill it on our way out
+    _base = null;
+  }
+
   @override
   Future<void> elevate() async {
     await _shutdownDaemon();
@@ -113,6 +156,7 @@ class DaemonBackend implements CoreBackend {
       try {
         await _call('POST', '/shutdown');
       } catch (_) {}
+      await _dropSession();
     }
     _process?.kill();
     _process = null;
@@ -137,7 +181,12 @@ class DaemonBackend implements CoreBackend {
     }
     final resp = await req.close().timeout(const Duration(seconds: 45));
     final text = await resp.transform(utf8.decoder).join();
-    final decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text);
+    Object? decoded;
+    try {
+      decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text);
+    } on FormatException {
+      throw CoreException('HTTP ${resp.statusCode}: ${text.trim()}');
+    }
     final map = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{'value': decoded};
     if (resp.statusCode >= 400) {
       final msg = (map['error'] ?? map['message'] ?? 'HTTP ${resp.statusCode}').toString();
@@ -194,6 +243,12 @@ class DaemonBackend implements CoreBackend {
     required CorePref core,
     required ProxyMode mode,
     int port = 0,
+    List<String>? rules,
+    bool rulesReplace = false,
+    Map<String, dynamic>? tuning,
+    List<String>? bypass,
+    bool findProcess = true,
+    String tunStack = 'gvisor',
   }) async {
     await _ensure();
     final m = await _call('POST', '/start', {
@@ -205,8 +260,55 @@ class DaemonBackend implements CoreBackend {
       },
       'mode': modeWire(mode),
       'port': port,
+      if (rules != null) 'rules': {'lines': rules, 'replace': rulesReplace},
+      if (tuning != null && tuning.isNotEmpty) 'tuning': tuning,
+      'bypass': ?bypass,
+      'findProcess': findProcess,
+      'tunStack': tunStack,
     });
     return _status(m);
+  }
+
+  @override
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false}) async {
+    await _ensure();
+    final m = await _call('POST', '/validate', {
+      'content': content,
+      if (rules != null) 'rules': {'lines': rules, 'replace': rulesReplace},
+    });
+    final det = m['detect'] as Map<String, dynamic>?;
+    return ValidateResult(
+      ok: m['ok'] == true,
+      format: parseFormat(det?['format'] as String?),
+      core: parseCore(det?['core'] as String?),
+      error: m['error'] as String?,
+      converted: (m['converted'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  Future<ProfileRulesInfo> profileRules(String content) async {
+    await _ensure();
+    final m = await _call('POST', '/profile-rules', {'content': content});
+    List<String> list(String k) => (m[k] as List?)?.map((e) => e.toString()).toList() ?? const [];
+    return ProfileRulesInfo(
+      core: parseCore(m['core'] as String?),
+      replace: m['replace'] == true,
+      rules: list('rules'),
+      readOnly: list('readOnly'),
+      targets: list('targets'),
+      types: list('types'),
+    );
+  }
+
+  @override
+  Future<List<ProfileRule>> activeRules() async {
+    final m = await _clashCall('GET', '/rules');
+    return [
+      for (final r in (m['rules'] as List?) ?? const [])
+        if (r is Map)
+          ProfileRule((r['type'] ?? '').toString(), (r['payload'] ?? '').toString(), (r['proxy'] ?? '').toString()),
+    ];
   }
 
   @override
@@ -325,27 +427,49 @@ class DaemonBackend implements CoreBackend {
     await _clashCall('DELETE', '/connections');
   }
 
+  /// The core sends response headers for /logs only with its first log line,
+  /// so a plain async* generator could sit in `await req.close()` forever and
+  /// make cancel() (and so disconnect) hang. Here cancel closes the socket at
+  /// once, whatever the request is waiting for.
   @override
-  Stream<LogEntry> logs({String level = 'info'}) async* {
+  Stream<LogEntry> logs({String level = 'info'}) {
     final c = _clash;
-    if (c == null) return;
-    final client = HttpClient();
-    try {
-      final req = await client.getUrl(c.resolve('/logs?level=$level'));
-      req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $_clashSecret');
-      final resp = await req.close();
-      await for (final line in resp.transform(utf8.decoder).transform(const LineSplitter())) {
-        if (line.trim().isEmpty) continue;
+    if (c == null) return const Stream.empty();
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+    StreamSubscription<String>? lines;
+    late final StreamController<LogEntry> out;
+    out = StreamController<LogEntry>(
+      onListen: () async {
         try {
-          final m = jsonDecode(line) as Map<String, dynamic>;
-          yield LogEntry((m['type'] ?? 'info').toString(), (m['payload'] ?? '').toString(), DateTime.now());
+          final req = await client.getUrl(c.resolve('/logs?level=$level'));
+          req.headers.set(HttpHeaders.authorizationHeader, 'Bearer $_clashSecret');
+          final resp = await req.close();
+          if (out.isClosed) return;
+          lines = resp.transform(utf8.decoder).transform(const LineSplitter()).listen(
+            (line) {
+              if (line.trim().isEmpty) return;
+              try {
+                final m = jsonDecode(line) as Map<String, dynamic>;
+                out.add(LogEntry((m['type'] ?? 'info').toString(), (m['payload'] ?? '').toString(), DateTime.now()));
+              } catch (_) {
+                out.add(LogEntry('info', line, DateTime.now()));
+              }
+            },
+            onDone: () => out.close(),
+            onError: (_) => out.close(),
+            cancelOnError: true,
+          );
         } catch (_) {
-          yield LogEntry('info', line, DateTime.now());
+          if (!out.isClosed) await out.close();
         }
-      }
-    } finally {
-      client.close(force: true);
-    }
+      },
+      onCancel: () {
+        // Don't await anything here: closing the client tears the socket down.
+        lines?.cancel();
+        client.close(force: true);
+      },
+    );
+    return out.stream;
   }
 
   @override

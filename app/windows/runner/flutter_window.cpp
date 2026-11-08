@@ -1,6 +1,32 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+#include <flutter/standard_method_codec.h>
+
 #include <optional>
+
+#pragma comment(lib, "dwmapi.lib")
+
+namespace {
+
+// Popup menus (the tray menu) follow the dark theme only when the process
+// opts in through uxtheme's undocumented SetPreferredAppMode (ordinal 135,
+// Windows 10 1903+); FlushMenuThemes (136) applies it to existing menus.
+// mode: 1 = follow the system, 2 = always dark, 3 = always light.
+void SetMenuTheme(int mode) {
+  HMODULE uxtheme = ::LoadLibraryExW(L"uxtheme.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+  if (!uxtheme) return;
+  using SetPreferredAppModeFn = int(WINAPI*)(int);
+  using FlushMenuThemesFn = void(WINAPI*)();
+  auto set_mode = reinterpret_cast<SetPreferredAppModeFn>(
+      ::GetProcAddress(uxtheme, MAKEINTRESOURCEA(135)));
+  auto flush = reinterpret_cast<FlushMenuThemesFn>(
+      ::GetProcAddress(uxtheme, MAKEINTRESOURCEA(136)));
+  if (set_mode) set_mode(mode);
+  if (flush) flush();
+}
+
+}  // namespace
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -27,6 +53,30 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  // SolaHelm: until Dart says otherwise, menus follow the system theme.
+  SetMenuTheme(1);
+  window_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "solahelm/window",
+      &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "setDarkMode") {
+          const auto* dark = std::get_if<bool>(call.arguments());
+          if (!dark) {
+            result->Error("bad-args", "expected a bool");
+            return;
+          }
+          SetMenuTheme(*dark ? 2 : 3);
+          BOOL value = *dark ? TRUE : FALSE;
+          ::DwmSetWindowAttribute(GetHandle(), 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, &value,
+                                  sizeof(value));
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
+
   // SolaHelm: the window is shown from Dart (window_manager), so the app can
   // start hidden in the tray.
   flutter_controller_->engine()->SetNextFrameCallback([&]() {});
@@ -40,6 +90,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  window_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

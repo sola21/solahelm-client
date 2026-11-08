@@ -39,7 +39,14 @@ func (s *singBox) Start(config []byte, opts Options) error {
 	if err != nil {
 		return err
 	}
+	if err := opts.Tuning.validate(); err != nil {
+		return err
+	}
 	adjustSingBoxInbounds(&parsed, opts)
+	applySingBoxTuning(&parsed, opts.Tuning)
+	if err := injectSingBoxRules(&parsed, opts.Rules); err != nil {
+		return err
+	}
 	if opts.FindProcess {
 		if parsed.Route == nil {
 			parsed.Route = &option.RouteOptions{}

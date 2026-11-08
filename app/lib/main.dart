@@ -6,13 +6,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/backend.dart';
 import 'core/daemon_backend.dart';
 import 'core/fake_backend.dart';
+import 'core/updater.dart';
 import 'desktop.dart';
 import 'l10n/app_localizations.dart';
+import 'models.dart';
 import 'shell.dart';
 import 'state/app_state.dart';
 import 'state/scope.dart';
 import 'state/settings.dart';
 import 'state/sub_store.dart';
+import 'screens/settings.dart' show appVersion;
 import 'theme.dart';
 
 /// `flutter run --dart-define=DEMO=true` runs on fake data without a core.
@@ -34,7 +37,11 @@ Future<void> main(List<String> args) async {
     store = MemorySubStore();
   }
   final state = AppState(settings, backend, store, isDemo: exe == null);
+  if (Platform.isWindows && exe != null) {
+    state.updater = Updater(currentVersion: appVersion, portable: isPortable);
+  }
   await state.init();
+  await state.attachRunningCore(); // after "exit, keep the core"
 
   DesktopShell? desktop;
   if (DesktopShell.supported) {
@@ -44,8 +51,13 @@ Future<void> main(List<String> args) async {
     await desktop.init(startHidden: hidden);
   }
   runApp(SolaHelmApp(state: state, desktop: desktop));
+  if (settings.checkUpdates && state.updater != null) {
+    // Give the window (and a possible auto-connect) a moment first.
+    Future<void>.delayed(const Duration(seconds: 8), () => state.checkForUpdates(silent: true));
+  }
 
-  if (settings.autoConnect && state.subscription != null) {
+  final connectNow = args.contains(DesktopShell.connectFlag) || settings.autoConnect;
+  if (connectNow && state.subscription != null && state.status == LinkStatus.disconnected) {
     await state.connect(); // TUN: goes straight to the UAC prompt if needed
   }
 }

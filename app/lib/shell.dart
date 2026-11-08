@@ -7,6 +7,7 @@ import 'models.dart';
 import 'screens/connections.dart';
 import 'screens/home.dart';
 import 'screens/logs.dart';
+import 'screens/rules.dart';
 import 'screens/nodes.dart';
 import 'screens/settings.dart';
 import 'screens/subscriptions.dart';
@@ -15,7 +16,7 @@ import 'state/scope.dart';
 import 'theme.dart';
 import 'widgets/common.dart';
 
-enum Section { home, nodes, subscriptions, connections, logs, settings }
+enum Section { home, nodes, subscriptions, connections, rules, logs, settings }
 
 /// Phones and narrow windows get a bottom bar with four sections;
 /// wide windows get a sidebar with all of them.
@@ -51,7 +52,11 @@ class _ShellState extends State<Shell> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     switch (n.kind) {
       case NoticeKind.info:
-        final text = n.message == 'no-subscription' ? s.needSubscription : n.message;
+        final text = n.message == 'no-subscription'
+            ? s.needSubscription
+            : n.message.startsWith('update:')
+                ? s.updateAvailable(n.message.substring(7))
+                : n.message;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
         if (n.message == 'no-subscription') setState(() => _section = Section.subscriptions);
       case NoticeKind.error:
@@ -63,13 +68,14 @@ class _ShellState extends State<Shell> {
   }
 
 
-  static const _mobile = [Section.home, Section.nodes, Section.subscriptions, Section.settings];
+  static const _mobile = [Section.home, Section.nodes, Section.subscriptions, Section.rules, Section.settings];
 
   (String, IconData) _meta(S s, Section x) => switch (x) {
         Section.home => (s.navHome, Icons.home_outlined),
         Section.nodes => (s.navNodes, Icons.format_list_bulleted),
         Section.subscriptions => (s.navSubscriptions, Icons.rss_feed),
         Section.connections => (s.navConnections, Icons.swap_horiz),
+        Section.rules => (s.navRules, Icons.alt_route),
         Section.logs => (s.navLogs, Icons.article_outlined),
         Section.settings => (s.navSettings, Icons.settings_outlined),
       };
@@ -80,6 +86,7 @@ class _ShellState extends State<Shell> {
         Section.subscriptions => const SubscriptionsScreen(),
         Section.settings => const SettingsScreen(),
         Section.connections => const ConnectionsScreen(),
+        Section.rules => const RulesScreen(),
         Section.logs => const LogsScreen(),
       };
 

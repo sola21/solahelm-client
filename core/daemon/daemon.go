@@ -31,8 +31,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/sola21/solahelm-client/core/convert"
 	"github.com/sola21/solahelm-client/core/detect"
 	"github.com/sola21/solahelm-client/core/engine"
 )
@@ -47,7 +49,7 @@ const (
 )
 
 type systemProxy interface {
-	Enable(addr string) error
+	Enable(addr string, bypass []string) error
 	Disable() error
 }
 
@@ -74,6 +76,14 @@ type StartRequest struct {
 	Mode     Mode   `json:"mode"`
 	Port     int    `json:"port"`     // local mixed port; 0 = 7890 or the next free one
 	TUNStack string `json:"tunStack"` // default gvisor
+	// Rules are user rules in Clash syntax, see engine.Rules.
+	Rules *engine.Rules `json:"rules"`
+	// Tuning overrides profile settings (TUN, IPv6, log level, LAN access).
+	Tuning *engine.Tuning `json:"tuning"`
+	// Bypass is the system-proxy exception list; empty = the built-in one.
+	Bypass []string `json:"bypass"`
+	// FindProcess: look up the process of each connection (default on).
+	FindProcess *bool `json:"findProcess"`
 }
 
 // FetchResult is a downloaded subscription.
@@ -101,6 +111,7 @@ type Server struct {
 	sysprox systemProxy
 	quit    chan struct{}
 	once    sync.Once
+	parent  atomic.Int64 // pid of the UI we follow; 0 = none (detached)
 }
 
 func New(secret, workDir string, versions map[string]string) *Server {
@@ -126,6 +137,28 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /stop", func(w http.ResponseWriter, r *http.Request) {
 		s.reply(w, s.Stop(), nil)
 	})
+	mux.HandleFunc("POST /validate", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Content string        `json:"content"`
+			Rules   *engine.Rules `json:"rules"`
+		}
+		if err := decode(r, &req); err != nil {
+			s.reply(w, nil, err)
+			return
+		}
+		s.reply(w, Validate([]byte(req.Content), req.Rules), nil)
+	})
+	mux.HandleFunc("POST /profile-rules", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Content string `json:"content"`
+		}
+		if err := decode(r, &req); err != nil {
+			s.reply(w, nil, err)
+			return
+		}
+		res, err := ProfileRules([]byte(req.Content))
+		s.reply(w, res, err)
+	})
 	mux.HandleFunc("POST /detect", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Content string `json:"content"`
@@ -150,6 +183,22 @@ func (s *Server) Handler() http.Handler {
 		}
 		res, err := Fetch(r.Context(), req.URL, engine.Kind(req.Prefer))
 		s.reply(w, res, err)
+	})
+	// The UI exits but the core keeps running; a later UI attaches again.
+	mux.HandleFunc("POST /detach", func(w http.ResponseWriter, r *http.Request) {
+		s.WatchParent(0)
+		s.reply(w, s.Status(), nil)
+	})
+	mux.HandleFunc("POST /attach", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			PID int `json:"pid"`
+		}
+		if err := decode(r, &req); err != nil {
+			s.reply(w, nil, err)
+			return
+		}
+		s.WatchParent(req.PID)
+		s.reply(w, s.Status(), nil)
 	})
 	mux.HandleFunc("POST /shutdown", func(w http.ResponseWriter, r *http.Request) {
 		st := s.Stop()
@@ -207,11 +256,16 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 	if err != nil {
 		return fail(err)
 	}
-	if det.Format == detect.ShareLinks {
-		return fail(fmt.Errorf("share links (%s) are not supported yet: use the /singbox or /clash subscription",
-			strings.Join(det.Protocols, ", ")))
-	}
 	kind := det.Core
+	if det.Format == detect.ShareLinks {
+		// Links become a full mihomo config; a pinned core can't change that.
+		conv, err := convert.LinksToMihomo(body)
+		if err != nil {
+			return fail(err)
+		}
+		body = conv.YAML
+		req.Core = ""
+	}
 	if req.Core != "" && req.Core != "auto" {
 		kind = engine.Kind(req.Core)
 		if !kind.Valid() {
@@ -237,8 +291,10 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 		Controller:   controller,
 		Secret:       apiSecret,
 		ProxyOnly:    req.Mode != ModeTUN,
-		LoopbackOnly: true,
-		FindProcess:  true,
+		LoopbackOnly: req.Tuning == nil || !req.Tuning.AllowLAN,
+		FindProcess:  req.FindProcess == nil || *req.FindProcess,
+		Tuning:       req.Tuning,
+		Rules:        req.Rules,
 		TUNStack:     stack,
 		MixedPort:    port,
 	})
@@ -246,7 +302,7 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 		return fail(err)
 	}
 	if req.Mode == ModeSystemProxy {
-		if err := s.sysprox.Enable(fmt.Sprintf("127.0.0.1:%d", port)); err != nil {
+		if err := s.sysprox.Enable(fmt.Sprintf("127.0.0.1:%d", port), req.Bypass); err != nil {
 			_ = s.mgr.Stop()
 			return fail(fmt.Errorf("system proxy: %w", err))
 		}
@@ -430,12 +486,99 @@ func headerTitle(h http.Header) string {
 // WatchParent stops everything and exits when the UI process goes away, so an
 // elevated core never outlives the app (and never leaves TUN or the system
 // proxy behind).
+//
+// Only the latest parent counts: after /attach the old one may exit freely,
+// and after /detach no parent is watched at all ("exit, keep the core").
 func (s *Server) WatchParent(pid int) {
+	s.parent.Store(int64(pid))
 	if pid <= 0 {
 		return
 	}
 	go func() {
 		waitForProcess(pid)
-		s.Shutdown()
+		if s.parent.Load() == int64(pid) {
+			s.Shutdown()
+		}
 	}()
+}
+
+// ValidateResult says whether a config body can run, and on which core.
+type ValidateResult struct {
+	OK        bool           `json:"ok"`
+	Detect    *detect.Result `json:"detect,omitempty"`
+	Error     string         `json:"error,omitempty"`
+	Converted int            `json:"converted,omitempty"` // proxies made from share links
+}
+
+// Validate detects a body and parses it with its core (links are converted
+// first), without starting anything.
+func Validate(body []byte, rules *engine.Rules) ValidateResult {
+	det, err := detect.Detect(body, "")
+	if err != nil {
+		return ValidateResult{Error: err.Error()}
+	}
+	det.Links = nil
+	res := ValidateResult{Detect: &det}
+	if det.Format == detect.ShareLinks {
+		conv, err := convert.LinksToMihomo(body)
+		if err != nil {
+			res.Error = err.Error()
+			return res
+		}
+		res.Converted = conv.Proxies
+		body = conv.YAML
+	}
+	if err := engine.ValidateWithRules(det.Core, body, rules); err != nil {
+		res.Error = err.Error()
+		return res
+	}
+	res.OK = true
+	return res
+}
+
+// ProfileRulesResult feeds the rules editor.
+type ProfileRulesResult struct {
+	Core engine.Kind `json:"core"`
+	// Replace: the editor owns the whole rule list (mihomo). Otherwise its
+	// rules go in front of ReadOnly, the profile's own (sing-box).
+	Replace  bool     `json:"replace"`
+	Rules    []string `json:"rules"`    // editable lines (mihomo: the profile's rules)
+	ReadOnly []string `json:"readOnly"` // sing-box: the profile's rules, described
+	Targets  []string `json:"targets"`  // groups and proxies rules may point to
+	Types    []string `json:"types"`    // rule types the editor may offer
+}
+
+// mihomoRuleTypes are the rule types offered for mihomo profiles.
+var mihomoRuleTypes = []string{
+	"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-REGEX", "DOMAIN-WILDCARD", "GEOSITE", "GEOIP",
+	"IP-CIDR", "IP-CIDR6", "IP-SUFFIX", "IP-ASN", "SRC-IP-CIDR", "SRC-PORT", "DST-PORT", "IN-PORT",
+	"PROCESS-NAME", "PROCESS-PATH", "PROCESS-NAME-REGEX", "NETWORK", "RULE-SET", "MATCH",
+}
+
+// ProfileRules returns what the rules editor needs for a profile body.
+func ProfileRules(body []byte) (*ProfileRulesResult, error) {
+	det, err := detect.Detect(body, "")
+	if err != nil {
+		return nil, err
+	}
+	if det.Format == detect.ShareLinks {
+		conv, err := convert.LinksToMihomo(body)
+		if err != nil {
+			return nil, err
+		}
+		body = conv.YAML
+	}
+	res := &ProfileRulesResult{Core: det.Core}
+	switch det.Core {
+	case engine.Mihomo:
+		res.Replace, res.Types = true, mihomoRuleTypes
+		res.Rules, res.Targets, err = engine.MihomoProfileRules(body)
+	default:
+		res.Types = engine.SingBoxRuleTypes
+		res.ReadOnly, res.Targets, err = engine.SingBoxProfileRules(body)
+	}
+	if res.Rules == nil {
+		res.Rules = []string{}
+	}
+	return res, err
 }

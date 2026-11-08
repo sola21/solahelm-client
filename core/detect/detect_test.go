@@ -24,12 +24,11 @@ func TestDetect(t *testing.T) {
 		{"clash yaml", "mixed-port: 7890\nproxies:\n  - {name: a, type: hysteria2, server: x, port: 1}\nrules:\n  - MATCH,DIRECT\n", "", ClashYAML, engine.Mihomo, 0},
 		{"clash json", `{"proxies":[],"rules":["MATCH,DIRECT"]}`, "", ClashYAML, engine.Mihomo, 0},
 		{"bom + yaml", "\xef\xbb\xbfproxy-groups: []\n", "", ClashYAML, engine.Mihomo, 0},
-		{"plain links, default prefer", links, "", ShareLinks, engine.SingBox, 0},
-		{"plain links, prefer mihomo", links, engine.Mihomo, ShareLinks, engine.Mihomo, 0},
-		{"base64 links", base64.StdEncoding.EncodeToString([]byte(links)), "", ShareLinks, engine.SingBox, 0},
-		{"naive forces sing-box", links + "naive+https://u:p@vps1.example.org:6443#n\n", engine.Mihomo, ShareLinks, engine.SingBox, 0},
-		{"ssr forces mihomo", links + "ssr://abc\n", engine.SingBox, ShareLinks, engine.Mihomo, 0},
-		{"naive + ssr: best coverage", "naive+https://a@b:1\nssr://abc\n", engine.SingBox, ShareLinks, engine.SingBox, 1},
+		{"plain links", links, "", ShareLinks, engine.Mihomo, 0},
+		{"plain links, prefer sing-box", links, engine.SingBox, ShareLinks, engine.Mihomo, 0},
+		{"base64 links", base64.StdEncoding.EncodeToString([]byte(links)), "", ShareLinks, engine.Mihomo, 0},
+		{"naive is reported as unsupported", links + "naive+https://u:p@vps1.example.org:6443#n\n", "", ShareLinks, engine.Mihomo, 1},
+		{"ssr runs on mihomo", links + "ssr://abc\n", "", ShareLinks, engine.Mihomo, 0},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

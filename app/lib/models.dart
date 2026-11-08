@@ -13,7 +13,18 @@ enum SubFormat { singBoxJson, clashYaml, links }
 
 enum ProxyMode { tun, systemProxy, portOnly }
 
-enum LinkStatus { disconnected, connecting, connected }
+enum LinkStatus {
+  disconnected,
+  connecting,
+  connected,
+  disconnecting;
+
+  /// Connecting or disconnecting: the connect button is disabled meanwhile.
+  bool get busy => this == connecting || this == disconnecting;
+}
+
+/// Where a profile comes from.
+enum SubSource { remote, file, pasted }
 
 /// One proxy server entry from the core (a leaf, not a group).
 class ProxyNode {
@@ -54,6 +65,10 @@ class Subscription {
     this.expire,
     this.updatedAt,
     this.error,
+    this.source = SubSource.remote,
+    this.edited = false,
+    this.rules,
+    this.rulesReplace = false,
   });
 
   final String id;
@@ -67,6 +82,44 @@ class Subscription {
   final DateTime? expire; // null: never
   final DateTime? updatedAt;
   final String? error; // last update error
+  final SubSource source; // url holds the link, or the file path for files
+  final bool edited; // changed by hand; a refresh would overwrite it
+  /// User rules in Clash syntax kept apart from the profile, so a refresh
+  /// doesn't lose them. null = the profile's own rules as they are.
+  final List<String>? rules;
+  /// rules replace the profile's list (mihomo) instead of going in front (sing-box).
+  final bool rulesReplace;
+
+  bool get refreshable => source != SubSource.pasted;
+
+  Subscription copyWith({
+    String? name,
+    bool? edited,
+    SubFormat? format,
+    CoreKind? core,
+    DateTime? updatedAt,
+    List<String>? Function()? rules,
+    bool? rulesReplace,
+  }) =>
+      Subscription(
+        id: id,
+        name: name ?? this.name,
+        url: url,
+        format: format ?? this.format,
+        core: core ?? this.core,
+        protocols: protocols,
+        linkCount: linkCount,
+        upload: upload,
+        download: download,
+        total: total,
+        expire: expire,
+        updatedAt: updatedAt ?? this.updatedAt,
+        error: error,
+        source: source,
+        edited: edited ?? this.edited,
+        rules: rules == null ? this.rules : rules(),
+        rulesReplace: rulesReplace ?? this.rulesReplace,
+      );
 
   bool get loaded => format != null;
   static const _gb = 1024 * 1024 * 1024;
@@ -95,6 +148,10 @@ class Subscription {
         'expire': expire?.millisecondsSinceEpoch,
         'updatedAt': updatedAt?.millisecondsSinceEpoch,
         'error': error,
+        'source': source.name,
+        'edited': edited,
+        'rules': rules,
+        'rulesReplace': rulesReplace,
       };
 
   static Subscription fromJson(Map<String, dynamic> m) => Subscription(
@@ -111,6 +168,10 @@ class Subscription {
         expire: _date(m['expire']),
         updatedAt: _date(m['updatedAt']),
         error: m['error'] as String?,
+        source: SubSource.values.asNameMap()[m['source']] ?? SubSource.remote,
+        edited: m['edited'] as bool? ?? false,
+        rules: (m['rules'] as List?)?.map((e) => e.toString()).toList(),
+        rulesReplace: m['rulesReplace'] as bool? ?? false,
       );
 
   static DateTime? _date(Object? v) => v is num ? DateTime.fromMillisecondsSinceEpoch(v.toInt()) : null;
@@ -186,4 +247,73 @@ class LogEntry {
   final String level; // debug, info, warning, error
   final String message;
   final DateTime time;
+}
+
+/// A rule of the running profile, as the core reports it.
+class ProfileRule {
+  const ProfileRule(this.type, this.payload, this.proxy);
+  final String type;
+  final String payload;
+  final String proxy;
+}
+
+/// What the rules editor works with, from the core (`/profile-rules`).
+class ProfileRulesInfo {
+  const ProfileRulesInfo({
+    required this.core,
+    required this.replace,
+    required this.rules,
+    required this.readOnly,
+    required this.targets,
+    required this.types,
+  });
+  final CoreKind? core;
+  final bool replace; // true: the editor owns the whole list (mihomo)
+  final List<String> rules; // the profile's own editable lines
+  final List<String> readOnly; // sing-box: the profile's rules, described
+  final List<String> targets; // groups and proxies
+  final List<String> types; // rule types to offer
+}
+
+/// Result of checking a config (and rules) with the core, without starting it.
+class ValidateResult {
+  const ValidateResult({required this.ok, this.format, this.core, this.error, this.converted = 0});
+  final bool ok;
+  final SubFormat? format;
+  final CoreKind? core;
+  final String? error;
+  final int converted; // proxies made from share links
+}
+
+/// One Clash rule line split into its parts.
+class RuleLine {
+  const RuleLine({required this.type, this.payload = '', required this.target, this.noResolve = false});
+
+  final String type;
+  final String payload;
+  final String target;
+  final bool noResolve;
+
+  static const ipTypes = {'IP-CIDR', 'IP-CIDR6', 'IP-SUFFIX', 'IP-ASN', 'GEOIP', 'SRC-IP-CIDR'};
+  bool get canNoResolve => ipTypes.contains(type);
+
+  static RuleLine? parse(String line) {
+    final parts = line.split(',').map((e) => e.trim()).toList();
+    if (parts.isEmpty || parts.first.isEmpty) return null;
+    final type = parts.first.toUpperCase();
+    if (type == 'MATCH' || type == 'FINAL') {
+      return parts.length >= 2 ? RuleLine(type: 'MATCH', target: parts[1]) : null;
+    }
+    if (parts.length < 3) return null;
+    return RuleLine(
+      type: type,
+      payload: parts[1],
+      target: parts[2],
+      noResolve: parts.skip(3).any((e) => e.toLowerCase() == 'no-resolve'),
+    );
+  }
+
+  @override
+  String toString() =>
+      type == 'MATCH' ? 'MATCH,$target' : '$type,$payload,$target${noResolve && canNoResolve ? ',no-resolve' : ''}';
 }

@@ -45,6 +45,10 @@ type Options struct {
 	// FindProcess makes the core find the process behind every connection, so
 	// the connections screen can group by application.
 	FindProcess bool
+	// Rules are user rules in Clash syntax (see type Rules).
+	Rules *Rules
+	// Tuning overrides profile settings from the app's settings.
+	Tuning *Tuning
 	// MixedPort, when non-zero, is the local HTTP+SOCKS port. It replaces the
 	// config's own mixed port (or adds one) so the client can avoid busy ports.
 	MixedPort int

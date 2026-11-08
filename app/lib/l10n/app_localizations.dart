@@ -1020,6 +1020,684 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Недостаточно прав для TUN: Windows не разрешил запустить ядро от имени администратора. Подтвердите запрос или выберите «Системный прокси».'**
   String get notElevated;
+
+  /// No description provided for @navRules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила'**
+  String get navRules;
+
+  /// No description provided for @importFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл'**
+  String get importFile;
+
+  /// No description provided for @pastedName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из буфера {date}'**
+  String pastedName(String date);
+
+  /// No description provided for @profileAdded.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль добавлен'**
+  String get profileAdded;
+
+  /// No description provided for @menuOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть и редактировать'**
+  String get menuOpen;
+
+  /// No description provided for @menuRules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила'**
+  String get menuRules;
+
+  /// No description provided for @rename.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переименовать'**
+  String get rename;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название'**
+  String get nameLabel;
+
+  /// No description provided for @sourceFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'файл'**
+  String get sourceFile;
+
+  /// No description provided for @sourcePasted.
+  ///
+  /// In ru, this message translates to:
+  /// **'вставлен'**
+  String get sourcePasted;
+
+  /// No description provided for @editedBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'изменён вручную'**
+  String get editedBadge;
+
+  /// No description provided for @rulesBadge.
+  ///
+  /// In ru, this message translates to:
+  /// **'свои правила'**
+  String get rulesBadge;
+
+  /// No description provided for @check.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить'**
+  String get check;
+
+  /// No description provided for @save.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранить'**
+  String get save;
+
+  /// No description provided for @saved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранено'**
+  String get saved;
+
+  /// No description provided for @checkOk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Конфиг в порядке: {format}, ядро {core}'**
+  String checkOk(String format, String core);
+
+  /// No description provided for @checkOkLinks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылки в порядке: {n} прокси, ядро mihomo'**
+  String checkOkLinks(int n);
+
+  /// No description provided for @editedWarning.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль по ссылке: при обновлении подписки правки в тексте будут заменены. Свои правила задавайте в «Правилах», они сохраняются отдельно.'**
+  String get editedWarning;
+
+  /// No description provided for @unsavedTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменения не сохранены'**
+  String get unsavedTitle;
+
+  /// No description provided for @discard.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не сохранять'**
+  String get discard;
+
+  /// No description provided for @rulesEdit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Редактировать'**
+  String get rulesEdit;
+
+  /// No description provided for @rulesActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'Действующие правила'**
+  String get rulesActive;
+
+  /// No description provided for @rulesOfProfile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила профиля'**
+  String get rulesOfProfile;
+
+  /// No description provided for @rulesNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правил нет'**
+  String get rulesNone;
+
+  /// No description provided for @rulesCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правил: {n}'**
+  String rulesCount(int n);
+
+  /// No description provided for @ruleType.
+  ///
+  /// In ru, this message translates to:
+  /// **'Тип правила'**
+  String get ruleType;
+
+  /// No description provided for @rulePayload.
+  ///
+  /// In ru, this message translates to:
+  /// **'Параметр'**
+  String get rulePayload;
+
+  /// No description provided for @ruleTarget.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прокси'**
+  String get ruleTarget;
+
+  /// No description provided for @addTop.
+  ///
+  /// In ru, this message translates to:
+  /// **'В начало'**
+  String get addTop;
+
+  /// No description provided for @addBottom.
+  ///
+  /// In ru, this message translates to:
+  /// **'В конец'**
+  String get addBottom;
+
+  /// No description provided for @asText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Текстом'**
+  String get asText;
+
+  /// No description provided for @asList.
+  ///
+  /// In ru, this message translates to:
+  /// **'Списком'**
+  String get asList;
+
+  /// No description provided for @rulesHintReplace.
+  ///
+  /// In ru, this message translates to:
+  /// **'Список целиком заменяет правила профиля и хранится отдельно от подписки: обновление его не сбросит.'**
+  String get rulesHintReplace;
+
+  /// No description provided for @rulesHintPrepend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профиль sing-box: ваши правила встают перед правилами профиля. Правила самого профиля ниже, они только для чтения.'**
+  String get rulesHintPrepend;
+
+  /// No description provided for @resetRules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вернуть правила профиля'**
+  String get resetRules;
+
+  /// No description provided for @profileRulesReadonly.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила профиля (только чтение)'**
+  String get profileRulesReadonly;
+
+  /// No description provided for @searchRules.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск правил'**
+  String get searchRules;
+
+  /// No description provided for @ruleInvalid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверное правило в строке {n}: {line}'**
+  String ruleInvalid(int n, String line);
+
+  /// No description provided for @rulesSaved.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила сохранены'**
+  String get rulesSaved;
+
+  /// No description provided for @payloadEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите параметр'**
+  String get payloadEmpty;
+
+  /// No description provided for @addRuleFor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правило'**
+  String get addRuleFor;
+
+  /// No description provided for @ruleDirect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Напрямую'**
+  String get ruleDirect;
+
+  /// No description provided for @ruleProxy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через VPN'**
+  String get ruleProxy;
+
+  /// No description provided for @ruleReject.
+  ///
+  /// In ru, this message translates to:
+  /// **'Блокировать'**
+  String get ruleReject;
+
+  /// No description provided for @ruleAddedFor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правило для {what} добавлено'**
+  String ruleAddedFor(String what);
+
+  /// No description provided for @rulesEditorTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Правила: {name}'**
+  String rulesEditorTitle(String name);
+
+  /// No description provided for @rulesNotConnectedHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показаны правила профиля. Подключитесь, чтобы видеть правила, которые применило ядро.'**
+  String get rulesNotConnectedHint;
+
+  /// No description provided for @formatLinksShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ссылки'**
+  String get formatLinksShort;
+
+  /// No description provided for @statusDisconnecting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отключение…'**
+  String get statusDisconnecting;
+
+  /// No description provided for @trayRestart.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перезапустить'**
+  String get trayRestart;
+
+  /// No description provided for @settingsConnection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подключение и TUN'**
+  String get settingsConnection;
+
+  /// No description provided for @settingsConnectionHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стек и маршруты TUN, исключения системного прокси, порты, доступ из локальной сети'**
+  String get settingsConnectionHint;
+
+  /// No description provided for @settingsCoreAdv.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ядро'**
+  String get settingsCoreAdv;
+
+  /// No description provided for @settingsCoreAdvHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'IPv6, уровень логов, определение процессов, версии ядер'**
+  String get settingsCoreAdvHint;
+
+  /// No description provided for @reapplyHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменения применятся после переподключения.'**
+  String get reapplyHint;
+
+  /// No description provided for @reapply.
+  ///
+  /// In ru, this message translates to:
+  /// **'Переподключить'**
+  String get reapply;
+
+  /// No description provided for @secTun.
+  ///
+  /// In ru, this message translates to:
+  /// **'TUN'**
+  String get secTun;
+
+  /// No description provided for @manageTun.
+  ///
+  /// In ru, this message translates to:
+  /// **'Управлять настройками TUN'**
+  String get manageTun;
+
+  /// No description provided for @manageTunOff.
+  ///
+  /// In ru, this message translates to:
+  /// **'Используются настройки профиля (стек gVisor, без запросов брандмауэра).'**
+  String get manageTunOff;
+
+  /// No description provided for @tunStack.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стек'**
+  String get tunStack;
+
+  /// No description provided for @tunStackHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'gVisor не открывает портов и не вызывает запрос брандмауэра. Mixed и System быстрее, но Windows может спросить разрешение.'**
+  String get tunStackHint;
+
+  /// No description provided for @strictRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Строгая маршрутизация'**
+  String get strictRoute;
+
+  /// No description provided for @strictRouteHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не даёт DNS-запросам уходить мимо туннеля.'**
+  String get strictRouteHint;
+
+  /// No description provided for @mtu.
+  ///
+  /// In ru, this message translates to:
+  /// **'MTU'**
+  String get mtu;
+
+  /// No description provided for @routeExclude.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исключить сети из TUN'**
+  String get routeExclude;
+
+  /// No description provided for @routeExcludeHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Эти сети идут напрямую, мимо туннеля: локальная сеть, RDP, принтеры.'**
+  String get routeExcludeHint;
+
+  /// No description provided for @addNetwork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить сеть'**
+  String get addNetwork;
+
+  /// No description provided for @networkHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'192.168.1.0/24'**
+  String get networkHint;
+
+  /// No description provided for @secSysProxy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Системный прокси'**
+  String get secSysProxy;
+
+  /// No description provided for @proxyBypass.
+  ///
+  /// In ru, this message translates to:
+  /// **'Исключения системного прокси'**
+  String get proxyBypass;
+
+  /// No description provided for @proxyBypassHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адреса, к которым программы обращаются напрямую. Можно маски: 192.168.*, *.local, <local>.'**
+  String get proxyBypassHint;
+
+  /// No description provided for @addException.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить исключение'**
+  String get addException;
+
+  /// No description provided for @restoreDefaults.
+  ///
+  /// In ru, this message translates to:
+  /// **'Стандартный список'**
+  String get restoreDefaults;
+
+  /// No description provided for @secPorts.
+  ///
+  /// In ru, this message translates to:
+  /// **'Порты'**
+  String get secPorts;
+
+  /// No description provided for @mixedPort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Смешанный порт (HTTP + SOCKS)'**
+  String get mixedPort;
+
+  /// No description provided for @mixedPortHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Если порт занят, будет взят следующий свободный.'**
+  String get mixedPortHint;
+
+  /// No description provided for @allowLan.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешить подключения из локальной сети'**
+  String get allowLan;
+
+  /// No description provided for @allowLanHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Другие устройства смогут использовать прокси этого компьютера. Windows может спросить разрешение брандмауэра.'**
+  String get allowLanHint;
+
+  /// No description provided for @lanAddresses.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адреса для других устройств: {list}'**
+  String lanAddresses(String list);
+
+  /// No description provided for @ipv6.
+  ///
+  /// In ru, this message translates to:
+  /// **'IPv6'**
+  String get ipv6;
+
+  /// No description provided for @ipv6Profile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из профиля'**
+  String get ipv6Profile;
+
+  /// No description provided for @ipv6On.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вкл'**
+  String get ipv6On;
+
+  /// No description provided for @ipv6Off.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выкл'**
+  String get ipv6Off;
+
+  /// No description provided for @logLevel.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уровень логов'**
+  String get logLevel;
+
+  /// No description provided for @logLevelProfile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из профиля'**
+  String get logLevelProfile;
+
+  /// No description provided for @findProcess.
+  ///
+  /// In ru, this message translates to:
+  /// **'Определять процессы'**
+  String get findProcess;
+
+  /// No description provided for @findProcessHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужно для группировки соединений и правил PROCESS-NAME. Отключите, если важна каждая доля процессора.'**
+  String get findProcessHint;
+
+  /// No description provided for @coresBuiltIn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ядра встроены в клиент и обновляются вместе с ним.'**
+  String get coresBuiltIn;
+
+  /// No description provided for @invalidCidr.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужна сеть вида 192.168.1.0/24'**
+  String get invalidCidr;
+
+  /// No description provided for @invalidPort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Порт от 1 до 65535'**
+  String get invalidPort;
+
+  /// No description provided for @invalidMtu.
+  ///
+  /// In ru, this message translates to:
+  /// **'MTU от 576 до 65535'**
+  String get invalidMtu;
+
+  /// No description provided for @secDns.
+  ///
+  /// In ru, this message translates to:
+  /// **'DNS'**
+  String get secDns;
+
+  /// No description provided for @dnsOverride.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свои DNS-серверы (профили mihomo)'**
+  String get dnsOverride;
+
+  /// No description provided for @dnsOverrideHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.'**
+  String get dnsOverrideHint;
+
+  /// No description provided for @dnsRemote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Через VPN'**
+  String get dnsRemote;
+
+  /// No description provided for @dnsRemoteHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для всех имён. Шифрованный DNS: https://…, tls://…'**
+  String get dnsRemoteHint;
+
+  /// No description provided for @dnsDirect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Напрямую'**
+  String get dnsDirect;
+
+  /// No description provided for @dnsDirectHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Только чтобы найти сами VPN-серверы и для прямого трафика. Обычные IP-адреса.'**
+  String get dnsDirectHint;
+
+  /// No description provided for @invalidResolver.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужен IP или адрес вида https://…/dns-query'**
+  String get invalidResolver;
+
+  /// No description provided for @trayExitKeepCore.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти, оставив VPN включённым'**
+  String get trayExitKeepCore;
+
+  /// No description provided for @toggleHotkey.
+  ///
+  /// In ru, this message translates to:
+  /// **'Горячая клавиша вкл./выкл. VPN'**
+  String get toggleHotkey;
+
+  /// No description provided for @hotkeyNone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не задана'**
+  String get hotkeyNone;
+
+  /// No description provided for @hotkeySet.
+  ///
+  /// In ru, this message translates to:
+  /// **'Задать'**
+  String get hotkeySet;
+
+  /// No description provided for @hotkeyPress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нажмите сочетание клавиш, например Ctrl + Alt + V. Оно работает, даже когда окно скрыто.'**
+  String get hotkeyPress;
+
+  /// No description provided for @updates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновления'**
+  String get updates;
+
+  /// No description provided for @checkUpdates.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверять обновления при запуске'**
+  String get checkUpdates;
+
+  /// No description provided for @checkNow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить'**
+  String get checkNow;
+
+  /// No description provided for @updateLatest.
+  ///
+  /// In ru, this message translates to:
+  /// **'У вас последняя версия'**
+  String get updateLatest;
+
+  /// No description provided for @updateNoReleases.
+  ///
+  /// In ru, this message translates to:
+  /// **'Релизов пока нет'**
+  String get updateNoReleases;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступна версия {v}'**
+  String updateAvailable(String v);
+
+  /// No description provided for @updateTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить до {v}'**
+  String updateTo(String v);
+
+  /// No description provided for @updateDownloading.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузка обновления… {p}%'**
+  String updateDownloading(int p);
+
+  /// No description provided for @updateHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Клиент скачает архив (через VPN, если он включён), закроется, обновится и запустится снова. Настройки и подписки сохранятся.'**
+  String get updateHint;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
