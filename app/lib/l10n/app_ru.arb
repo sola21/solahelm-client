@@ -1,0 +1,351 @@
+{
+  "@@locale": "ru",
+  "appTitle": "SolaHelm",
+  "navHome": "Главная",
+  "navNodes": "Узлы",
+  "navSubscriptions": "Подписки",
+  "navConnections": "Соединения",
+  "navLogs": "Журнал",
+  "navSettings": "Настройки",
+  "statusDisconnected": "Отключено",
+  "statusConnected": "Подключено",
+  "statusConnecting": "Подключение…",
+  "tapToConnect": "Нажмите, чтобы подключиться",
+  "connect": "Подключить",
+  "disconnect": "Отключить",
+  "connectedFor": "{time} · ядро {core}",
+  "@connectedFor": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "coreAutoChip": "{core} · авто",
+  "@coreAutoChip": {
+    "placeholders": {
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "coreChosenAuto": "ядро {core} выбрано автоматически",
+  "@coreChosenAuto": {
+    "placeholders": {
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "coreChosenManual": "ядро {core} закреплено в настройках",
+  "@coreChosenManual": {
+    "placeholders": {
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "modeLabel": "Режим",
+  "modeTun": "TUN",
+  "modeSystemProxy": "Системный прокси",
+  "modePortOnly": "Только порт {port}",
+  "@modePortOnly": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "metricNode": "Узел",
+  "metricLatency": "Задержка",
+  "metricSpeed": "Скорость",
+  "metricTraffic": "Трафик",
+  "kbps": "{value} КБ/с",
+  "@kbps": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "gb": "{value} ГБ",
+  "@gb": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trafficOf": "{used} из {total}",
+  "@trafficOf": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "groupLabel": "Группа: {name}",
+  "@groupLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupAuto": "Авто (быстрейший)",
+  "ping": "Пинг",
+  "pingMs": "{ms} мс",
+  "@pingMs": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "pingTimeout": "нет ответа",
+  "pingUnknown": "—",
+  "recentConnections": "Последние соединения",
+  "routeDirect": "напрямую",
+  "routeVia": "VPN · {node}",
+  "@routeVia": {
+    "placeholders": {
+      "node": {
+        "type": "String"
+      }
+    }
+  },
+  "addSubscription": "Добавить подписку",
+  "subscriptionUrl": "Ссылка на подписку",
+  "subscriptionUrlHint": "https://panel.example.org/…/sub/…",
+  "add": "Добавить",
+  "cancel": "Отмена",
+  "errorUrlEmpty": "Введите ссылку",
+  "errorUrlInvalid": "Ссылка должна начинаться с http:// или https://",
+  "scanQr": "QR-код",
+  "pasteClipboard": "Вставить",
+  "clipboardEmpty": "В буфере обмена нет ссылки",
+  "subPending": "Загрузится, когда подключим ядро",
+  "expiresOn": "до {date}",
+  "@expiresOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noExpiry": "бессрочно",
+  "unlimited": "без лимита",
+  "formatSingBox": "sing-box JSON",
+  "formatClash": "Clash YAML",
+  "formatLinks": "{count, plural, one{{count} ссылка} few{{count} ссылки} many{{count} ссылок} other{{count} ссылки}}",
+  "@formatLinks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reasonOnlyIn": "{protocol} есть только в {core}",
+  "@reasonOnlyIn": {
+    "placeholders": {
+      "protocol": {
+        "type": "String"
+      },
+      "core": {
+        "type": "String"
+      }
+    }
+  },
+  "reasonByFormat": "ядро выбрано по формату",
+  "rulesTemplate": "правила «{name}»",
+  "@rulesTemplate": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTheme": "Тема",
+  "themeSystem": "Как в системе",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "settingsLanguage": "Язык",
+  "languageSystem": "Как в системе",
+  "settingsCore": "Ядро",
+  "coreAuto": "Авто",
+  "coreHint": "В режиме «Авто» ядро выбирается по формату подписки и протоколам. Если протокол есть только в одном ядре, будет выбрано оно.",
+  "settingsAbout": "О программе",
+  "coreVersions": "sing-box {sb} · mihomo {mh}",
+  "@coreVersions": {
+    "placeholders": {
+      "sb": {
+        "type": "String"
+      },
+      "mh": {
+        "type": "String"
+      }
+    }
+  },
+  "demoBanner": "Демо-данные: интерфейс ещё не подключён к ядру",
+  "comingSoon": "Раздел появится, когда интерфейс подключим к ядру.",
+  "nodesNotConnected": "Подключитесь, чтобы увидеть узлы подписки.",
+  "groupAutoHint": "Эта группа выбирает узел сама по задержке.",
+  "noSubscriptions": "Добавьте подписку — ссылку из кабинета вашей панели.",
+  "noSubscriptionsTitle": "Пока нет подписок",
+  "needSubscription": "Сначала добавьте подписку",
+  "refresh": "Обновить",
+  "delete": "Удалить",
+  "subscriptionAdded": "Подписка добавлена",
+  "updatedAt": "обновлено {time}",
+  "@updatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "localPort": "Порт 127.0.0.1:{port}",
+  "@localPort": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "adminBadge": "администратор",
+  "coreMissing": "Не найден solahelm-core рядом с приложением — показаны демо-данные",
+  "errorPrefix": "Ошибка: {message}",
+  "@errorPrefix": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "noConnections": "Соединений пока нет.",
+  "connectionsHint": "Активные соединения через ядро: куда и через какой узел.",
+  "trafficUnlimited": "{used} · без лимита",
+  "groupSelector": "ручной выбор",
+  "groupUrlTest": "автовыбор по задержке",
+  "groupFallback": "резерв: первый рабочий",
+  "groupLoadBalance": "балансировка",
+  "@trafficUnlimited": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      }
+    }
+  },
+  "logsEmpty": "Журнал пуст. Строки ядра появятся после подключения.",
+  "search": "Поиск",
+  "pause": "Пауза",
+  "resume": "Продолжить",
+  "clear": "Очистить",
+  "copy": "Копировать",
+  "copied": "Скопировано",
+  "levelAll": "Все",
+  "connActive": "Активные",
+  "connClosed": "Закрытые",
+  "processesCount": "Процессов: {n}",
+  "filter": "Фильтр",
+  "sortDownload": "Скачано",
+  "sortUpload": "Отдано",
+  "sortTime": "Время",
+  "sortHost": "Хост",
+  "sortCount": "Соединений",
+  "byProcess": "По процессам",
+  "flatList": "Списком",
+  "closeAll": "Закрыть все",
+  "closeConnection": "Закрыть соединение",
+  "back": "Назад",
+  "secondsAgo": "{n} с назад",
+  "minutesAgo": "{n} мин назад",
+  "hoursAgo": "{n} ч назад",
+  "secTraffic": "Трафик",
+  "upSpeed": "Скорость отдачи",
+  "downSpeed": "Скорость скачивания",
+  "uploaded": "Отдано",
+  "downloaded": "Скачано",
+  "secRouting": "Маршрутизация",
+  "rule": "Правило",
+  "chain": "Цепочка прокси",
+  "connType": "Тип подключения",
+  "secNetwork": "Сеть",
+  "host": "Хост",
+  "destIp": "IP назначения",
+  "srcIp": "IP источника",
+  "srcPort": "Порт источника",
+  "destPort": "Порт назначения",
+  "remote": "Удалённое назначение",
+  "secProcess": "Процесс",
+  "processName": "Имя",
+  "processPath": "Путь",
+  "started": "Начало",
+  "close": "Закрыть",
+  "statusActive": "Активно",
+  "statusClosed": "Закрыто",
+  "clearClosed": "Очистить закрытые",
+  "settingsBehavior": "Поведение",
+  "closeToTray": "Сворачивать в трей при закрытии окна",
+  "launchAtStartup": "Запускать вместе с Windows",
+  "startMinimized": "Запускать свёрнутым в трей",
+  "autoConnect": "Подключаться при запуске",
+  "autoConnectTunNote": "В режиме TUN при автоподключении Windows спросит права администратора.",
+  "trayShow": "Открыть SolaHelm",
+  "trayExit": "Выход",
+  "@minutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@secondsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@processesCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trayModeMenu": "Режим подключения ({mode})",
+  "routingMenu": "Маршрутизация ({mode})",
+  "routingRule": "Правила",
+  "routingGlobal": "Глобально",
+  "routingDirect": "Напрямую",
+  "routingLabel": "Маршрутизация",
+  "@trayModeMenu": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "@routingMenu": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "notElevated": "Недостаточно прав для TUN: Windows не разрешил запустить ядро от имени администратора. Подтвердите запрос или выберите «Системный прокси»."
+}

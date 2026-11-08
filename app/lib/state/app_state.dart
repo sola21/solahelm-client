@@ -1,0 +1,538 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
+import '../core/backend.dart';
+import '../models.dart';
+import 'settings.dart';
+import 'sub_store.dart';
+
+enum NoticeKind { error, info }
+
+class Notice {
+  const Notice(this.kind, [this.message = '']);
+  final NoticeKind kind;
+  final String message;
+}
+
+/// Everything the screens render. Talks to the core through [CoreBackend].
+class AppState extends ChangeNotifier {
+  AppState(this.settings, this.backend, this.store, {this.isDemo = false}) {
+    settings.addListener(notifyListeners);
+  }
+
+  final Settings settings;
+  final CoreBackend backend;
+  final SubStore store;
+  final bool isDemo;
+
+  final _notices = StreamController<Notice>.broadcast();
+  Stream<Notice> get notices => _notices.stream;
+
+  final List<Subscription> subscriptions = [];
+  String? activeId;
+  bool busySubscriptions = false;
+
+  LinkStatus status = LinkStatus.disconnected;
+  CoreStatus coreStatus = const CoreStatus();
+
+  List<ProxyGroup> groups = const [];
+  Map<String, ProxyNode> leaves = const {};
+  String? groupName; // group shown on the nodes screen
+  bool pinging = false;
+  String? routingMode; // rule / global / direct, from the core
+
+  int upKbps = 0;
+  int downKbps = 0;
+  /// Live connections, newest first.
+  List<ConnectionEntry> connections = const [];
+  final Map<String, ConnectionEntry> _active = {};
+  /// Connections that were open earlier in this session, newest first.
+  final List<ConnectionEntry> closedConnections = [];
+  static const _maxClosed = 1000;
+  int uploadTotal = 0, downloadTotal = 0;
+
+  /// Core log lines, oldest first.
+  final List<LogEntry> logs = [];
+  static const _maxLogs = 3000;
+  bool logsPaused = false;
+  StreamSubscription<LogEntry>? _logSub;
+  Timer? _logRetry;
+  int? _lastUp, _lastDown;
+  DateTime? _lastSample;
+  Timer? _trafficTimer;
+  Timer? _proxiesTimer;
+  bool _disposed = false;
+  final Map<String, ProxyNode> _pseudo = {}; // nested groups shown as nodes
+
+  // ---- derived ----
+
+  Subscription? get subscription {
+    for (final s in subscriptions) {
+      if (s.id == activeId) return s;
+    }
+    return subscriptions.isEmpty ? null : subscriptions.first;
+  }
+
+  ProxyMode get mode => settings.proxyMode;
+
+  /// The core that runs, or would run, the active subscription.
+  CoreKind get core {
+    if (status == LinkStatus.connected && coreStatus.core != null) return coreStatus.core!;
+    return switch (settings.corePref) {
+      CorePref.singBox => CoreKind.singBox,
+      CorePref.mihomo => CoreKind.mihomo,
+      CorePref.auto => subscription?.core ?? CoreKind.singBox,
+    };
+  }
+
+  bool get coreIsAuto => settings.corePref == CorePref.auto;
+
+  Duration get connectedFor {
+    final t = coreStatus.startedAt;
+    return (status != LinkStatus.connected || t == null) ? Duration.zero : DateTime.now().difference(t);
+  }
+
+  ProxyGroup? get group {
+    for (final g in groups) {
+      if (g.name == groupName) return g;
+    }
+    return groups.isEmpty ? null : groups.first;
+  }
+
+  ProxyGroup? _groupByName(String name) {
+    for (final g in groups) {
+      if (g.name == name) return g;
+    }
+    return null;
+  }
+
+  /// Members of the shown group as nodes (nested groups appear as nodes too).
+  List<ProxyNode> get groupNodes {
+    final g = group;
+    if (g == null) return const [];
+    return [
+      for (final m in g.members)
+        leaves[m] ?? _pseudo.putIfAbsent(m, () => ProxyNode(name: m, type: _groupByName(m)?.type ?? '')),
+    ];
+  }
+
+  /// The server traffic actually goes through: follow group choices to a leaf.
+  ProxyNode? get node {
+    var g = group;
+    for (var i = 0; g != null && i < 8; i++) {
+      final now = g.now;
+      if (now == null) return null;
+      final leaf = leaves[now];
+      if (leaf != null) return leaf;
+      g = _groupByName(now);
+    }
+    return null;
+  }
+
+  // ---- lifecycle ----
+
+  Future<void> init() async {
+    final (list, active) = await store.load();
+    subscriptions
+      ..clear()
+      ..addAll(list);
+    activeId = active ?? (list.isEmpty ? null : list.first.id);
+    _notify();
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _error(Object e) => _notices.add(Notice(NoticeKind.error, e.toString()));
+
+  // ---- subscriptions ----
+
+  /// Downloads and stores a subscription. Returns an error message or null.
+  Future<String?> addSubscription(String url) async {
+    busySubscriptions = true;
+    _notify();
+    try {
+      final r = await backend.fetch(url);
+      if (r.format == null) return r.error ?? 'Unknown subscription format';
+      final id = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+      final host = Uri.tryParse(url)?.host ?? url;
+      final sub = _fromFetch(id, (r.title?.isNotEmpty ?? false) ? r.title! : host, url, r);
+      await store.saveContent(id, r.content);
+      subscriptions.add(sub);
+      activeId ??= id;
+      await _persist();
+      return null;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      busySubscriptions = false;
+      _notify();
+    }
+  }
+
+  Subscription _fromFetch(String id, String name, String url, FetchResult r) => Subscription(
+        id: id,
+        name: name,
+        url: url,
+        format: r.format,
+        core: r.core,
+        protocols: r.protocols,
+        upload: r.upload,
+        download: r.download,
+        total: r.total,
+        expire: r.expire,
+        updatedAt: DateTime.now(),
+      );
+
+  Future<void> refreshSubscription(String id) async {
+    final i = subscriptions.indexWhere((s) => s.id == id);
+    if (i < 0) return;
+    final old = subscriptions[i];
+    busySubscriptions = true;
+    _notify();
+    try {
+      final r = await backend.fetch(old.url);
+      if (r.format == null) throw CoreException(r.error ?? 'Unknown subscription format');
+      await store.saveContent(id, r.content);
+      subscriptions[i] = _fromFetch(id, old.name, old.url, r);
+      await _persist();
+      if (id == activeId && status == LinkStatus.connected) await reconnect();
+    } catch (e) {
+      _error(e);
+    } finally {
+      busySubscriptions = false;
+      _notify();
+    }
+  }
+
+  Future<void> removeSubscription(String id) async {
+    subscriptions.removeWhere((s) => s.id == id);
+    await store.delete(id);
+    if (activeId == id) {
+      activeId = subscriptions.isEmpty ? null : subscriptions.first.id;
+      if (status != LinkStatus.disconnected) await disconnect();
+    }
+    await _persist();
+    _notify();
+  }
+
+  Future<void> selectSubscription(String id) async {
+    if (activeId == id) return;
+    activeId = id;
+    await _persist();
+    _notify();
+    if (status == LinkStatus.connected) await reconnect();
+  }
+
+  Future<void> _persist() => store.save(subscriptions, activeId);
+
+  // ---- connection ----
+
+  Future<void> toggleConnection() async {
+    if (status == LinkStatus.disconnected) {
+      await connect();
+    } else {
+      await disconnect();
+    }
+  }
+
+  /// Connects the active subscription. TUN without admin rights restarts the
+  /// core elevated right away (one UAC prompt, or none if the app itself runs
+  /// as administrator); if that is refused, an error explains why.
+  Future<void> connect({bool allowElevate = true}) async {
+    final sub = subscription;
+    if (sub == null) {
+      _notices.add(const Notice(NoticeKind.info, 'no-subscription'));
+      return;
+    }
+    status = LinkStatus.connecting;
+    _notify();
+    try {
+      final content = await store.content(sub.id);
+      if (content == null) throw CoreException('The subscription has not been downloaded');
+      coreStatus = await backend.start(content: content, core: settings.corePref, mode: mode, port: 7890);
+      status = LinkStatus.connected;
+      _lastUp = _lastDown = null;
+      await _loadProxies();
+      _trafficTimer = Timer.periodic(const Duration(seconds: 1), (_) => _sampleTraffic());
+      _listenLogs();
+      _proxiesTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadProxies());
+    } on CoreException catch (e) {
+      status = LinkStatus.disconnected;
+      if (e.needsElevation && allowElevate) {
+        try {
+          await backend.elevate();
+        } catch (_) {
+          _notices.add(const Notice(NoticeKind.error, notElevated));
+          _notify();
+          return;
+        }
+        await connect(allowElevate: false);
+        return;
+      }
+      _notices.add(Notice(NoticeKind.error, e.needsElevation ? notElevated : e.message));
+    } catch (e) {
+      status = LinkStatus.disconnected;
+      _error(e);
+    }
+    _notify();
+  }
+
+  /// Notice message key: TUN needs admin rights and they were not granted.
+  static const notElevated = 'not-elevated';
+
+  Future<void> disconnect() async {
+    _trafficTimer?.cancel();
+    _proxiesTimer?.cancel();
+    _trafficTimer = _proxiesTimer = null;
+    _logRetry?.cancel();
+    await _logSub?.cancel();
+    _logSub = null;
+    final now = DateTime.now();
+    for (final c in _active.values) {
+      c
+        ..closedAt = now
+        ..upSpeed = 0
+        ..downSpeed = 0;
+      closedConnections.insert(0, c);
+    }
+    _active.clear();
+    _trimClosed();
+    try {
+      coreStatus = await backend.stop();
+    } catch (e) {
+      _error(e);
+    }
+    status = LinkStatus.disconnected;
+    groups = const [];
+    leaves = const {};
+    connections = const [];
+    upKbps = downKbps = 0;
+    _notify();
+  }
+
+  Future<void> reconnect() async {
+    await disconnect();
+    await connect();
+  }
+
+  Future<void> setMode(ProxyMode m) async {
+    if (m == mode) return;
+    settings.setProxyMode(m);
+    if (status == LinkStatus.connected) await reconnect();
+  }
+
+  Future<void> _loadProxies() async {
+    try {
+      final snap = await backend.proxies();
+      // Keep measured delays across refreshes.
+      for (final e in snap.leaves.entries) {
+        final old = leaves[e.key];
+        if (old != null && e.value.delayMs == null) {
+          e.value
+            ..delayMs = old.delayMs
+            ..timedOut = old.timedOut;
+        }
+      }
+      groups = snap.groups;
+      leaves = snap.leaves;
+      try {
+        routingMode = await backend.routingMode();
+      } catch (_) {}
+      if (groupName == null || _groupByName(groupName!) == null) {
+        groupName = groups.isEmpty ? null : groups.first.name;
+      }
+      _notify();
+    } catch (_) {
+      // Transient: the next tick retries.
+    }
+  }
+
+  /// Polls the core once (the 1 s timer calls this too).
+  Future<void> refreshTraffic() => _sampleTraffic();
+
+  Future<void> _sampleTraffic() async {
+    try {
+      final t = await backend.traffic();
+      final now = DateTime.now();
+      if (_lastUp != null && _lastSample != null) {
+        final secs = now.difference(_lastSample!).inMilliseconds / 1000;
+        if (secs > 0) {
+          upKbps = ((t.uploadTotal - _lastUp!).clamp(0, 1 << 62) / 1024 / secs).round();
+          downKbps = ((t.downloadTotal - _lastDown!).clamp(0, 1 << 62) / 1024 / secs).round();
+        }
+      }
+      _lastUp = t.uploadTotal;
+      _lastDown = t.downloadTotal;
+      _lastSample = now;
+      _trackConnections(t.connections, now);
+      uploadTotal = t.uploadTotal;
+      downloadTotal = t.downloadTotal;
+      _notify();
+    } catch (_) {}
+  }
+
+  void _trackConnections(List<ConnectionEntry> fresh, DateTime now) {
+    final secs = _lastConnSample == null ? 0.0 : now.difference(_lastConnSample!).inMilliseconds / 1000;
+    final seen = <String>{};
+    for (final c in fresh) {
+      seen.add(c.id);
+      final old = _active[c.id];
+      if (old != null && secs > 0) {
+        c.upSpeed = ((c.upload - old.upload).clamp(0, 1 << 62) / secs).round();
+        c.downSpeed = ((c.download - old.download).clamp(0, 1 << 62) / secs).round();
+      }
+      _active[c.id] = c;
+    }
+    final gone = _active.keys.where((id) => !seen.contains(id)).toList();
+    for (final id in gone) {
+      final c = _active.remove(id)!
+        ..closedAt = now
+        ..upSpeed = 0
+        ..downSpeed = 0;
+      closedConnections.insert(0, c);
+    }
+    _trimClosed();
+    _lastConnSample = now;
+    connections = _active.values.toList()
+      ..sort((a, b) => (b.start ?? now).compareTo(a.start ?? now));
+  }
+
+  DateTime? _lastConnSample;
+
+  void _trimClosed() {
+    if (closedConnections.length > _maxClosed) closedConnections.removeRange(_maxClosed, closedConnections.length);
+  }
+
+  Future<void> closeConnection(String id) async {
+    try {
+      await backend.closeConnection(id);
+      await _sampleTraffic();
+    } catch (e) {
+      _error(e);
+    }
+  }
+
+  Future<void> closeAllConnections() async {
+    try {
+      await backend.closeAllConnections();
+      await _sampleTraffic();
+    } catch (e) {
+      _error(e);
+    }
+  }
+
+  void clearClosedConnections() {
+    closedConnections.clear();
+    _notify();
+  }
+
+  void _listenLogs() {
+    _logSub?.cancel();
+    _logSub = backend.logs().listen((e) {
+      if (logsPaused) return;
+      logs.add(e);
+      if (logs.length > _maxLogs) logs.removeRange(0, logs.length - _maxLogs);
+      _notify();
+    }, onDone: () {
+      // The stream drops when the core restarts; reattach while connected.
+      if (status == LinkStatus.connected && !_disposed) {
+        _logRetry?.cancel();
+        _logRetry = Timer(const Duration(seconds: 2), () {
+          if (status == LinkStatus.connected && !_disposed) _listenLogs();
+        });
+      }
+    }, onError: (_) {});
+  }
+
+  void setLogsPaused(bool v) {
+    logsPaused = v;
+    _notify();
+  }
+
+  void clearLogs() {
+    logs.clear();
+    _notify();
+  }
+
+  Future<void> setRoutingMode(String mode) async {
+    try {
+      await backend.setRoutingMode(mode);
+      routingMode = mode;
+      await closeAllConnections(); // so open connections follow the new mode
+      _notify();
+    } catch (e) {
+      _error(e);
+    }
+  }
+
+  /// Picks [node] in [groupName] (tray menu); [groupName] must be a selector.
+  Future<void> selectNodeIn(String groupName, String node) async {
+    try {
+      await backend.select(groupName, node);
+      await _loadProxies();
+    } catch (e) {
+      _error(e);
+    }
+  }
+
+  ProxyGroup? groupByName(String name) => _groupByName(name);
+
+  void showGroup(String name) {
+    groupName = name;
+    _notify();
+  }
+
+  Future<void> selectNode(String name) async {
+    final g = group;
+    if (g == null || !g.selectable) return;
+    try {
+      await backend.select(g.name, name);
+      await _loadProxies();
+    } catch (e) {
+      _error(e);
+    }
+  }
+
+  /// Measures every member of the shown group in parallel.
+  Future<void> pingAll() async {
+    final nodes = groupNodes;
+    if (nodes.isEmpty || pinging) return;
+    pinging = true;
+    for (final n in nodes) {
+      n.measuring = true;
+    }
+    _notify();
+    await Future.wait(nodes.map((n) async {
+      final d = await backend.delay(n.name);
+      n
+        ..measuring = false
+        ..delayMs = d
+        ..timedOut = d == null;
+      final leaf = leaves[n.name];
+      if (leaf != null && !identical(leaf, n)) {
+        leaf
+          ..delayMs = d
+          ..timedOut = d == null;
+      }
+      _notify();
+    }));
+    pinging = false;
+    await _loadProxies();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _trafficTimer?.cancel();
+    _proxiesTimer?.cancel();
+    _logSub?.cancel();
+    _logRetry?.cancel();
+    settings.removeListener(notifyListeners);
+    _notices.close();
+    backend.dispose();
+    super.dispose();
+  }
+}
