@@ -942,4 +942,56 @@ class SRu extends S {
   @override
   String get quickTileHint =>
       'Откройте шторку, нажмите карандаш и перетащите плитку SolaHelm. Она включает последнее подключение и выключает VPN, не открывая приложение.';
+
+  @override
+  String get settingsUiMode => 'Интерфейс';
+
+  @override
+  String get uiSimple => 'Простой';
+
+  @override
+  String get uiSimpleHint =>
+      'Одна большая кнопка: добавили подписку, нажали — работает. Видно страну, через которую идёт трафик, и можно выбрать сервер. Ничего лишнего.';
+
+  @override
+  String get uiAdvanced => 'Расширенный';
+
+  @override
+  String get uiAdvancedHint =>
+      'Всё сразу: режимы TUN и прокси, выбор ядра, правила, соединения, журнал, тонкие настройки подключения и ядра.';
+
+  @override
+  String get welcomeTitle => 'Добро пожаловать в SolaHelm';
+
+  @override
+  String get welcomeSubtitle => 'Как вам удобнее?';
+
+  @override
+  String get welcomeLater =>
+      'Это можно поменять в любой момент: Настройки → Интерфейс.';
+
+  @override
+  String get settingsExit => 'Страна и IP';
+
+  @override
+  String get showExitInfo => 'Показывать страну и IP';
+
+  @override
+  String get showExitInfoHint =>
+      'После подключения клиент спрашивает у ipwho.is (через VPN), с каким IP и из какой страны вы теперь выходите в интернет.';
+
+  @override
+  String get exitLocating => 'Определяем страну…';
+
+  @override
+  String get exitUnknown => 'Не удалось определить IP';
+
+  @override
+  String get exitUnknownPlace => 'Страна неизвестна';
+
+  @override
+  String get showIp => 'Показать IP целиком';
+
+  @override
+  String get hideIp => 'Скрыть IP';
 }

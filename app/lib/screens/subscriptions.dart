@@ -257,8 +257,8 @@ class _SubscriptionCard extends StatelessWidget {
                   _ => state.removeSubscription(sub.id),
                 },
                 itemBuilder: (_) => [
-                  if (sub.loaded) PopupMenuItem(value: 'open', child: Text(s.menuOpen)),
-                  if (sub.loaded) PopupMenuItem(value: 'rules', child: Text(s.menuRules)),
+                  if (sub.loaded && !state.settings.simple) PopupMenuItem(value: 'open', child: Text(s.menuOpen)),
+                  if (sub.loaded && !state.settings.simple) PopupMenuItem(value: 'rules', child: Text(s.menuRules)),
                   if (sub.refreshable) PopupMenuItem(value: 'refresh', child: Text(s.refresh)),
                   PopupMenuItem(value: 'delete', child: Text(s.delete)),
                 ],

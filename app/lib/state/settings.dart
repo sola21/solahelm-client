@@ -194,6 +194,8 @@ class Settings extends ChangeNotifier {
     this.autoConnect = false,
     this.checkUpdates = true,
     this.vpnNotification = true,
+    this.uiMode,
+    this.showExitInfo = true,
     this.file,
   });
 
@@ -207,6 +209,10 @@ class Settings extends ChangeNotifier {
   bool autoConnect; // connect right after start
   bool checkUpdates; // look for a new release on start
   bool vpnNotification; // Android: a normal "VPN is running" notification (false: folded)
+  UiMode? uiMode; // null: not chosen yet, ask on start
+  bool showExitInfo; // look up the exit IP and country after connecting
+
+  bool get simple => uiMode == UiMode.simple;
   /// Global hotkey that toggles the VPN, as hotkey_manager JSON; null = none.
   Map<String, dynamic>? toggleHotkey;
   CoreSettings core = const CoreSettings();
@@ -240,6 +246,8 @@ class Settings extends ChangeNotifier {
         s.autoConnect = m['autoConnect'] as bool? ?? false;
         s.checkUpdates = m['checkUpdates'] as bool? ?? true;
         s.vpnNotification = m['vpnNotification'] as bool? ?? true;
+        s.uiMode = UiMode.values.asNameMap()[m['uiMode']];
+        s.showExitInfo = m['showExitInfo'] as bool? ?? true;
         s.core = CoreSettings.fromJson(m['coreSettings']);
         final hk = m['toggleHotkey'];
         s.toggleHotkey = hk is Map ? hk.cast<String, dynamic>() : null;
@@ -266,6 +274,8 @@ class Settings extends ChangeNotifier {
         'autoConnect': autoConnect,
         'checkUpdates': checkUpdates,
         'vpnNotification': vpnNotification,
+        'uiMode': uiMode?.name,
+        'showExitInfo': showExitInfo,
         'coreSettings': core.toJson(),
         'toggleHotkey': toggleHotkey,
       }));
@@ -337,6 +347,18 @@ class Settings extends ChangeNotifier {
 
   void setCheckUpdates(bool v) {
     checkUpdates = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setUiMode(UiMode v) {
+    uiMode = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setShowExitInfo(bool v) {
+    showExitInfo = v;
     notifyListeners();
     _save();
   }

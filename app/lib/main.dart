@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/android_backend.dart';
 import 'core/backend.dart';
 import 'core/daemon_backend.dart';
+import 'core/exit_ip.dart';
 import 'core/fake_backend.dart';
 import 'core/updater.dart';
 import 'desktop.dart';
@@ -44,6 +45,10 @@ Future<void> main(List<String> args) async {
   final state = AppState(settings, backend, store, isDemo: exe == null && !(Platform.isAndroid && !demo));
   AndroidBridge.onRevoked = () => state.disconnect();
   AndroidBridge.onCoreChanged = () => state.syncWithCore();
+  state.exitLookup = state.isDemo
+      ? (_, lang) async => ExitInfo(
+          ip: '203.0.113.42', countryCode: 'DE', country: lang == 'ru' ? 'Германия' : 'Germany', city: 'Frankfurt')
+      : (port, lang) => lookupExit(proxyPort: port, lang: lang);
   if (Platform.isAndroid && !demo) {
     var notify = settings.vpnNotification;
     unawaited(AndroidBridge.setNotificationVisible(notify).catchError((_) {}));

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum CoreKind {
   singBox('sing-box'),
   mihomo('mihomo');
@@ -12,6 +14,34 @@ enum CorePref { auto, singBox, mihomo }
 enum SubFormat { singBoxJson, clashYaml, links }
 
 enum ProxyMode { tun, systemProxy, portOnly }
+
+/// How much of the app is shown: [simple] is one button and a server list,
+/// [advanced] is everything. null in Settings = not chosen yet (first start).
+enum UiMode { simple, advanced }
+
+/// Where the traffic comes out: the public IP seen through the VPN.
+@immutable
+class ExitInfo {
+  const ExitInfo({required this.ip, this.countryCode, this.country, this.city});
+
+  final String ip;
+  final String? countryCode; // ISO 3166-1 alpha-2, upper case
+  final String? country; // in the UI language when the service supports it
+  final String? city;
+
+  /// "203.0.*.*" (IPv4) or "2a01:4f8:*" (IPv6): enough to recognise, not to copy.
+  String get masked {
+    if (ip.contains('.') && !ip.contains(':')) {
+      final p = ip.split('.');
+      return p.length == 4 ? '${p[0]}.${p[1]}.*.*' : ip;
+    }
+    final p = ip.split(':');
+    return p.length > 2 ? '${p[0]}:${p[1]}:*' : ip;
+  }
+
+  /// "США, Лос-Анджелес", or whatever is known.
+  String get place => [country ?? countryCode, city].whereType<String>().where((e) => e.isNotEmpty).join(', ');
+}
 
 enum LinkStatus {
   disconnected,

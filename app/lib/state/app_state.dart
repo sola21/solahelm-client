@@ -49,6 +49,68 @@ class AppState extends ChangeNotifier {
   List<ProfileRule> activeRules = const []; // rules of the running core
   String? routingMode; // rule / global / direct, from the core
 
+  // ---- where the traffic comes out ----
+
+  /// Set by main(): looks up the exit IP through the core's proxy port.
+  Future<ExitInfo?> Function(int proxyPort, String lang)? exitLookup;
+  ExitInfo? exit; // null: unknown (not connected, looking, or failed)
+  bool exitLoading = false;
+  bool exitFailed = false;
+  bool exitRevealed = false; // show the whole IP instead of "1.2.*.*"
+  String? _exitNode; // node the current [exit] was looked up for
+  Timer? _exitTimer;
+
+  void toggleExitReveal() {
+    exitRevealed = !exitRevealed;
+    _notify();
+  }
+
+  /// Looks the exit up again (after connecting, or when the node in use changed).
+  Future<void> refreshExit() async {
+    _exitTimer?.cancel();
+    final lookup = exitLookup;
+    final port = coreStatus.port;
+    if (lookup == null || !settings.showExitInfo || status != LinkStatus.connected || port == null) return;
+    final forNode = node?.name;
+    exitLoading = true;
+    exitFailed = false;
+    _notify();
+    final lang = settings.languageCode ?? (Platform.localeName.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    ExitInfo? info;
+    try {
+      info = await lookup(port, lang);
+    } catch (_) {}
+    if (status != LinkStatus.connected) return; // disconnected meanwhile
+    exitLoading = false;
+    _exitNode = forNode;
+    if (info != null) exit = info;
+    exitFailed = info == null;
+    _notify();
+  }
+
+  /// The "show country and IP" setting: look up now, or forget what's shown.
+  void setShowExitInfo(bool v) {
+    settings.setShowExitInfo(v);
+    if (v) {
+      unawaited(refreshExit());
+    } else {
+      _clearExit();
+      _notify();
+    }
+  }
+
+  void _scheduleExit(Duration delay) {
+    _exitTimer?.cancel();
+    _exitTimer = Timer(delay, refreshExit);
+  }
+
+  void _clearExit() {
+    _exitTimer?.cancel();
+    exit = null;
+    exitLoading = exitFailed = false;
+    _exitNode = null;
+  }
+
   int upKbps = 0;
   int downKbps = 0;
   /// Live connections, newest first.
@@ -438,6 +500,8 @@ class AppState extends ChangeNotifier {
     _trafficTimer = Timer.periodic(const Duration(seconds: 1), (_) => _sampleTraffic());
     _listenLogs();
     _proxiesTimer = Timer.periodic(const Duration(seconds: 10), (_) => _loadProxies());
+    _clearExit();
+    _scheduleExit(const Duration(milliseconds: 800)); // let the first connections settle
   }
 
   /// Takes over a core left running by "exit, keep the core".
@@ -533,6 +597,7 @@ class AppState extends ChangeNotifier {
   static const notElevated = 'not-elevated';
 
   Future<void> disconnect() async {
+    _clearExit();
     status = LinkStatus.disconnecting;
     _notify();
     _trafficTimer?.cancel();
@@ -600,6 +665,10 @@ class AppState extends ChangeNotifier {
       } catch (_) {}
       if (groupName == null || _groupByName(groupName!) == null) {
         groupName = groups.isEmpty ? null : groups.first.name;
+      }
+      // The traffic now leaves through another server (manual pick or "Auto"): look again.
+      if (status == LinkStatus.connected && !exitLoading && _exitNode != null && node?.name != _exitNode) {
+        _scheduleExit(const Duration(milliseconds: 300));
       }
       _notify();
     } catch (_) {
@@ -783,6 +852,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _exitTimer?.cancel();
     _trafficTimer?.cancel();
     _proxiesTimer?.cancel();
     _logSub?.cancel();

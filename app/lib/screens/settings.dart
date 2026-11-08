@@ -13,7 +13,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.2.0';
+const appVersion = '0.2.1';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 
@@ -36,6 +36,18 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
         SectionHeader(s.navSettings),
+        label(s.settingsUiMode),
+        SegmentedButton<UiMode>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: UiMode.simple, label: Text(s.uiSimple), icon: const Icon(Icons.power_settings_new, size: 18)),
+            ButtonSegment(value: UiMode.advanced, label: Text(s.uiAdvanced), icon: const Icon(Icons.tune, size: 18)),
+          ],
+          selected: {settings.uiMode ?? UiMode.advanced},
+          onSelectionChanged: (v) => settings.setUiMode(v.first),
+        ),
+        const SizedBox(height: 8),
+        Text(settings.simple ? s.uiSimpleHint : s.uiAdvancedHint, style: TextStyle(fontSize: 12, color: p.muted, height: 1.4)),
         label(s.settingsTheme),
         SegmentedButton<ThemeMode>(
           showSelectedIcon: false,
@@ -58,6 +70,7 @@ class SettingsScreen extends StatelessWidget {
           selected: {settings.languageCode ?? ''},
           onSelectionChanged: (v) => settings.setLanguage(v.first.isEmpty ? null : v.first),
         ),
+        if (!settings.simple) ...[
         label(s.settingsCore),
         SegmentedButton<CorePref>(
           showSelectedIcon: false,
@@ -71,6 +84,17 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(s.coreHint, style: TextStyle(fontSize: 12, color: p.muted, height: 1.4)),
+        ],
+        label(s.settingsExit),
+        Card(
+          child: SwitchListTile(
+            secondary: const Icon(Icons.public),
+            title: Text(s.showExitInfo),
+            subtitle: Text(s.showExitInfoHint, style: TextStyle(fontSize: 12, color: p.muted)),
+            value: settings.showExitInfo,
+            onChanged: st.setShowExitInfo,
+          ),
+        ),
         if (DesktopShell.supported) ...[
           label(s.settingsBehavior),
           Card(
@@ -153,8 +177,8 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ),
         ],
-        label(s.settingsConnection),
-        Card(
+        if (!settings.simple) label(s.settingsConnection),
+        if (!settings.simple) Card(
           child: Column(children: [
             ListTile(
               leading: const Icon(Icons.lan_outlined),

@@ -941,4 +941,56 @@ class SEn extends S {
   @override
   String get quickTileHint =>
       'Open the shade, tap the pencil and drag the SolaHelm tile in. It turns the last connection on and the VPN off without opening the app.';
+
+  @override
+  String get settingsUiMode => 'Interface';
+
+  @override
+  String get uiSimple => 'Simple';
+
+  @override
+  String get uiSimpleHint =>
+      'One big button: add a subscription, tap, done. You see which country your traffic comes out in and can pick a server. Nothing else in the way.';
+
+  @override
+  String get uiAdvanced => 'Advanced';
+
+  @override
+  String get uiAdvancedHint =>
+      'Everything: TUN and proxy modes, core choice, rules, connections, the log, fine-tuning of the connection and the core.';
+
+  @override
+  String get welcomeTitle => 'Welcome to SolaHelm';
+
+  @override
+  String get welcomeSubtitle => 'How would you like it?';
+
+  @override
+  String get welcomeLater =>
+      'You can change this any time: Settings → Interface.';
+
+  @override
+  String get settingsExit => 'Country and IP';
+
+  @override
+  String get showExitInfo => 'Show country and IP';
+
+  @override
+  String get showExitInfoHint =>
+      'After connecting, the client asks ipwho.is (through the VPN) which IP and country you now go online from.';
+
+  @override
+  String get exitLocating => 'Finding your country…';
+
+  @override
+  String get exitUnknown => 'Couldn\'t get the IP';
+
+  @override
+  String get exitUnknownPlace => 'Unknown country';
+
+  @override
+  String get showIp => 'Show the whole IP';
+
+  @override
+  String get hideIp => 'Hide the IP';
 }

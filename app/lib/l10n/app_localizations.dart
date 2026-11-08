@@ -1740,6 +1740,102 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Откройте шторку, нажмите карандаш и перетащите плитку SolaHelm. Она включает последнее подключение и выключает VPN, не открывая приложение.'**
   String get quickTileHint;
+
+  /// No description provided for @settingsUiMode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Интерфейс'**
+  String get settingsUiMode;
+
+  /// No description provided for @uiSimple.
+  ///
+  /// In ru, this message translates to:
+  /// **'Простой'**
+  String get uiSimple;
+
+  /// No description provided for @uiSimpleHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Одна большая кнопка: добавили подписку, нажали — работает. Видно страну, через которую идёт трафик, и можно выбрать сервер. Ничего лишнего.'**
+  String get uiSimpleHint;
+
+  /// No description provided for @uiAdvanced.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расширенный'**
+  String get uiAdvanced;
+
+  /// No description provided for @uiAdvancedHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Всё сразу: режимы TUN и прокси, выбор ядра, правила, соединения, журнал, тонкие настройки подключения и ядра.'**
+  String get uiAdvancedHint;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добро пожаловать в SolaHelm'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Как вам удобнее?'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @welcomeLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Это можно поменять в любой момент: Настройки → Интерфейс.'**
+  String get welcomeLater;
+
+  /// No description provided for @settingsExit.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страна и IP'**
+  String get settingsExit;
+
+  /// No description provided for @showExitInfo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показывать страну и IP'**
+  String get showExitInfo;
+
+  /// No description provided for @showExitInfoHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'После подключения клиент спрашивает у ipwho.is (через VPN), с каким IP и из какой страны вы теперь выходите в интернет.'**
+  String get showExitInfoHint;
+
+  /// No description provided for @exitLocating.
+  ///
+  /// In ru, this message translates to:
+  /// **'Определяем страну…'**
+  String get exitLocating;
+
+  /// No description provided for @exitUnknown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось определить IP'**
+  String get exitUnknown;
+
+  /// No description provided for @exitUnknownPlace.
+  ///
+  /// In ru, this message translates to:
+  /// **'Страна неизвестна'**
+  String get exitUnknownPlace;
+
+  /// No description provided for @showIp.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать IP целиком'**
+  String get showIp;
+
+  /// No description provided for @hideIp.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скрыть IP'**
+  String get hideIp;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

@@ -11,6 +11,7 @@ import 'screens/rules.dart';
 import 'screens/nodes.dart';
 import 'screens/settings.dart';
 import 'screens/subscriptions.dart';
+import 'screens/welcome.dart';
 import 'state/app_state.dart';
 import 'state/scope.dart';
 import 'theme.dart';
@@ -69,6 +70,7 @@ class _ShellState extends State<Shell> {
 
 
   static const _mobile = [Section.home, Section.nodes, Section.subscriptions, Section.rules, Section.settings];
+  static const _simple = [Section.home, Section.nodes, Section.subscriptions, Section.settings];
 
   (String, IconData) _meta(S s, Section x) => switch (x) {
         Section.home => (s.navHome, Icons.home_outlined),
@@ -93,19 +95,23 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
+    final settings = AppScope.of(context).settings;
+    if (settings.uiMode == null) return WelcomeScreen(settings: settings);
+    final simple = settings.simple;
     return LayoutBuilder(builder: (context, c) {
       final wide = c.maxWidth >= Shell.wideBreakpoint;
+      final shown = simple ? _simple : (wide ? Section.values : _mobile);
       var section = _section;
-      if (!wide && !_mobile.contains(section)) section = Section.home;
+      if (!shown.contains(section)) section = Section.home;
 
       if (!wide) {
         return Scaffold(
           body: SafeArea(child: _body(s, section, false)),
           bottomNavigationBar: NavigationBar(
-            selectedIndex: _mobile.indexOf(section),
-            onDestinationSelected: (i) => setState(() => _section = _mobile[i]),
+            selectedIndex: shown.indexOf(section),
+            onDestinationSelected: (i) => setState(() => _section = shown[i]),
             destinations: [
-              for (final x in _mobile) NavigationDestination(icon: Icon(_meta(s, x).$2), label: _meta(s, x).$1),
+              for (final x in shown) NavigationDestination(icon: Icon(_meta(s, x).$2), label: _meta(s, x).$1),
             ],
           ),
         );
@@ -123,7 +129,7 @@ class _ShellState extends State<Shell> {
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
                 child: Text(s.appTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
               ),
-              for (final x in Section.values)
+              for (final x in shown)
                 _SideItem(
                   icon: _meta(s, x).$2,
                   label: _meta(s, x).$1,

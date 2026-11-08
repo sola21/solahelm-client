@@ -6,6 +6,7 @@ import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/exit_card.dart';
 import 'connections.dart';
 import 'logs.dart';
 
@@ -45,12 +46,13 @@ class _NarrowHome extends StatelessWidget {
     final p = context.palette;
     final node = st.node;
     final connected = st.status == LinkStatus.connected;
+    final simple = st.settings.simple;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
         Row(children: [
           Expanded(child: Text(s.appTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500))),
-          CoreChip(st.core, auto: st.coreIsAuto),
+          if (!simple) CoreChip(st.core, auto: st.coreIsAuto),
         ]),
         if (st.isDemo) ...[const SizedBox(height: 12), const DemoBanner()],
         const SizedBox(height: 40),
@@ -62,11 +64,14 @@ class _NarrowHome extends StatelessWidget {
         const SizedBox(height: 2),
         Center(
           child: Text(
-            connected ? s.connectedFor(formatDuration(st.connectedFor), st.core.label) : s.tapToConnect,
+            connected
+                ? (simple ? formatDuration(st.connectedFor) : s.connectedFor(formatDuration(st.connectedFor), st.core.label))
+                : s.tapToConnect,
             style: TextStyle(fontSize: 13, color: p.muted),
           ),
         ),
         const SizedBox(height: 32),
+        if (ExitCard.visible(st)) ...[ExitCard(st, big: simple), const SizedBox(height: 12)],
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: p.panel, borderRadius: BorderRadius.circular(8)),
@@ -82,10 +87,11 @@ class _NarrowHome extends StatelessWidget {
             const SizedBox(height: 6),
             Row(children: [
               Expanded(
-                child: Text('${s.modeLabel}: ${_modeText(s, st, st.mode)}',
+                child: Text(
+                    simple ? (st.subscription?.name ?? '') : '${s.modeLabel}: ${_modeText(s, st, st.mode)}',
                     style: TextStyle(fontSize: 12, color: p.muted), overflow: TextOverflow.ellipsis),
               ),
-              if (st.subscription != null)
+              if (st.subscription != null && !simple)
                 Flexible(
                   child: Text(st.subscription!.name,
                       style: TextStyle(fontSize: 12, color: p.muted), overflow: TextOverflow.ellipsis),
@@ -103,9 +109,9 @@ class _NarrowHome extends StatelessWidget {
           const SizedBox(width: 4),
           Text(s.kbps(st.downKbps), style: const TextStyle(fontSize: 13)),
         ]),
-        const SizedBox(height: 16),
+        if (!simple) const SizedBox(height: 16),
         // The phone's bottom bar has no room for these two; open them as pages.
-        Card(
+        if (!simple) Card(
           margin: EdgeInsets.zero,
           clipBehavior: Clip.antiAlias,
           child: Column(children: [
@@ -159,6 +165,7 @@ class _WideHome extends StatelessWidget {
     final node = st.node;
     final connected = st.status == LinkStatus.connected;
     final busy = st.status.busy;
+    final simple = st.settings.simple;
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -175,12 +182,13 @@ class _WideHome extends StatelessWidget {
               const SizedBox(height: 4),
               Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 8, runSpacing: 4, children: [
                 if (sub != null) Text(sub.name, style: TextStyle(fontSize: 13, color: p.muted)),
-                CoreChip(st.core),
-                Text(
-                  st.coreIsAuto ? s.coreChosenAuto(st.core.label) : s.coreChosenManual(st.core.label),
-                  style: TextStyle(fontSize: 13, color: p.muted),
-                ),
-                if (connected && st.coreStatus.port != null)
+                if (!simple) CoreChip(st.core),
+                if (!simple)
+                  Text(
+                    st.coreIsAuto ? s.coreChosenAuto(st.core.label) : s.coreChosenManual(st.core.label),
+                    style: TextStyle(fontSize: 13, color: p.muted),
+                  ),
+                if (!simple && connected && st.coreStatus.port != null)
                   Text('· ${s.localPort(st.coreStatus.port!)}', style: TextStyle(fontSize: 13, color: p.muted)),
                 if (st.coreStatus.elevated)
                   Text('· ${s.adminBadge}', style: TextStyle(fontSize: 13, color: p.warning)),
@@ -205,15 +213,18 @@ class _WideHome extends StatelessWidget {
                   ),
           ),
         ]),
-        const SizedBox(height: 20),
-        SegmentedButton<ProxyMode>(
-          showSelectedIcon: false,
-          segments: [
-            for (final m in AppState.availableModes) ButtonSegment(value: m, label: Text(_modeText(s, st, m))),
-          ],
-          selected: {st.mode},
-          onSelectionChanged: busy ? null : (v) => st.setMode(v.first),
-        ),
+        if (!simple) ...[
+          const SizedBox(height: 20),
+          SegmentedButton<ProxyMode>(
+            showSelectedIcon: false,
+            segments: [
+              for (final m in AppState.availableModes) ButtonSegment(value: m, label: Text(_modeText(s, st, m))),
+            ],
+            selected: {st.mode},
+            onSelectionChanged: busy ? null : (v) => st.setMode(v.first),
+          ),
+        ],
+        if (ExitCard.visible(st)) ...[const SizedBox(height: 20), ExitCard(st, big: true)],
         const SizedBox(height: 20),
         LayoutBuilder(builder: (context, c) {
           final cols = c.maxWidth > 640 ? 4 : 2;

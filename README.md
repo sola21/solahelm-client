@@ -33,6 +33,11 @@ the VPN.
 
 ## Features
 
+- **Simple and advanced modes.** On first start the client asks which you prefer: simple — one button, the
+  country and a server list; advanced — everything else. Change it in Settings → Interface.
+- **Exit country and IP:** after connecting, the home screen shows the flag and country your traffic comes out
+  in, and the IP — masked until tapped (`203.0.*.*`). Looked up from `ipwho.is` through the VPN itself; can be
+  turned off in the settings.
 - **Two cores in one client:** sing-box 1.14 and mihomo 1.19; the core is picked from the subscription format.
 - **Subscriptions:** sing-box JSON, Clash/mihomo YAML and "universal" ones — a list of `hysteria2://`,
   `vless://`, `trojan://`, `tuic://`, `ss://`, `anytls://` … links, plain or base64. Import from a file or the

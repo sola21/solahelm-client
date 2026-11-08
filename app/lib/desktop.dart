@@ -247,6 +247,8 @@ class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
       state.mode,
       state.routingMode,
       state.settings.languageCode,
+      state.settings.uiMode,
+      state.exit?.place,
       state.subscription?.id,
       state.subscriptions.length,
       state.update?.version,
@@ -266,6 +268,7 @@ class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
       'SolaHelm — $status',
       if (connected) '${state.core.label} · ${_modeText(s, state.mode)}',
       if (connected && node != null) node.name,
+      if (connected && (state.exit?.place ?? '').isNotEmpty) state.exit!.place,
     ].join('\n');
 
     final items = <MenuItem>[
@@ -276,14 +279,15 @@ class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
         disabled: state.status.busy,
         onClick: (_) => state.toggleConnection(),
       ),
-      MenuItem.submenu(
-        label: s.trayModeMenu(_modeText(s, state.mode)),
-        submenu: Menu(items: [
-          for (final m in AppState.availableModes)
-            MenuItem.checkbox(label: _modeText(s, m), checked: m == state.mode, onClick: (_) => state.setMode(m)),
-        ]),
-      ),
-      if (connected && state.routingMode != null)
+      if (!state.settings.simple)
+        MenuItem.submenu(
+          label: s.trayModeMenu(_modeText(s, state.mode)),
+          submenu: Menu(items: [
+            for (final m in AppState.availableModes)
+              MenuItem.checkbox(label: _modeText(s, m), checked: m == state.mode, onClick: (_) => state.setMode(m)),
+          ]),
+        ),
+      if (connected && state.routingMode != null && !state.settings.simple)
         MenuItem.submenu(
           label: s.routingMenu(_routingText(s, state.routingMode!)),
           submenu: Menu(items: [

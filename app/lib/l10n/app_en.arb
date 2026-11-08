@@ -280,5 +280,21 @@
   "vpnNotificationHide": "Remove completely",
   "vpnNotificationHideHint": "Opens Android settings: turn off “VPN is running (folded)” there. The VPN keeps working; the key icon stays — the system shows it.",
   "quickTile": "Quick settings tile",
-  "quickTileHint": "Open the shade, tap the pencil and drag the SolaHelm tile in. It turns the last connection on and the VPN off without opening the app."
+  "quickTileHint": "Open the shade, tap the pencil and drag the SolaHelm tile in. It turns the last connection on and the VPN off without opening the app.",
+  "settingsUiMode": "Interface",
+  "uiSimple": "Simple",
+  "uiSimpleHint": "One big button: add a subscription, tap, done. You see which country your traffic comes out in and can pick a server. Nothing else in the way.",
+  "uiAdvanced": "Advanced",
+  "uiAdvancedHint": "Everything: TUN and proxy modes, core choice, rules, connections, the log, fine-tuning of the connection and the core.",
+  "welcomeTitle": "Welcome to SolaHelm",
+  "welcomeSubtitle": "How would you like it?",
+  "welcomeLater": "You can change this any time: Settings → Interface.",
+  "settingsExit": "Country and IP",
+  "showExitInfo": "Show country and IP",
+  "showExitInfoHint": "After connecting, the client asks ipwho.is (through the VPN) which IP and country you now go online from.",
+  "exitLocating": "Finding your country…",
+  "exitUnknown": "Couldn't get the IP",
+  "exitUnknownPlace": "Unknown country",
+  "showIp": "Show the whole IP",
+  "hideIp": "Hide the IP"
 }

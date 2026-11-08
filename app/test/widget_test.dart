@@ -14,8 +14,8 @@ import 'package:solahelm_client/state/app_state.dart';
 import 'package:solahelm_client/state/settings.dart';
 import 'package:solahelm_client/state/sub_store.dart';
 
-AppState newState({String? lang = 'ru', ProxyMode mode = ProxyMode.portOnly}) => AppState(
-      Settings(languageCode: lang, themeMode: ThemeMode.light, proxyMode: mode),
+AppState newState({String? lang = 'ru', ProxyMode mode = ProxyMode.portOnly, UiMode? ui = UiMode.advanced}) => AppState(
+      Settings(languageCode: lang, themeMode: ThemeMode.light, proxyMode: mode, uiMode: ui),
       FakeBackend(random: Random(1), startDelay: const Duration(milliseconds: 50)),
       MemorySubStore(),
     );
@@ -474,5 +474,103 @@ void main() {
     expect(list.single.totalGb, 100);
     expect(list.single.expire, DateTime(2027, 2, 1));
     expect(await FileSubStore(dir).content('a1'), 'proxies: []');
+  });
+
+  testWidgets('first start asks simple or advanced; simple hides the extras', (t) async {
+    final st = newState(ui: null);
+    await pumpApp(t, st, const Size(390, 844));
+    expect(find.text('Добро пожаловать в SolaHelm'), findsOneWidget);
+
+    await t.tap(find.text('Простой'));
+    await t.pumpAndSettle();
+    expect(st.settings.uiMode, UiMode.simple);
+    expect(find.text('Узлы'), findsOneWidget);
+    expect(find.text('Правила'), findsNothing); // not in the bottom bar
+    expect(find.text('Соединения'), findsNothing); // no Connections/Log card on the home screen
+
+    await t.tap(find.text('Настройки'));
+    await t.pumpAndSettle();
+    expect(find.text('Подключение и TUN'), findsNothing);
+    expect(find.text('Авто'), findsNothing); // no core picker
+    await t.tap(find.text('Расширенный'));
+    await t.pumpAndSettle();
+    expect(st.settings.uiMode, UiMode.advanced);
+    expect(find.text('Правила'), findsOneWidget);
+  });
+
+  testWidgets('exit card: masked IP, tap shows it all, another node looks again', (t) async {
+    final st = newState();
+    var calls = 0;
+    st.exitLookup = (port, lang) async {
+      calls++;
+      final fi = st.node?.name.startsWith('FL') ?? false;
+      return ExitInfo(
+        ip: fi ? '198.51.100.7' : '203.0.113.42',
+        countryCode: fi ? 'FI' : 'DE',
+        country: fi ? 'Финляндия' : 'Германия',
+        city: fi ? 'Хельсинки' : 'Франкфурт',
+      );
+    };
+    await pumpApp(t, st, const Size(390, 844));
+    await t.tap(find.text('Подписки'));
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    await t.tap(find.text('Главная'));
+    await t.pumpAndSettle();
+
+    await t.runAsync(() async {
+      await st.connect();
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+    });
+    await t.pumpAndSettle();
+    expect(calls, 1);
+    expect(find.text('Германия, Франкфурт'), findsOneWidget);
+    expect(find.text('203.0.*.*'), findsOneWidget);
+
+    await t.tap(find.text('203.0.*.*'));
+    await t.pumpAndSettle();
+    expect(find.text('203.0.113.42'), findsOneWidget);
+
+    await t.runAsync(() async {
+      await st.selectNode('FL-Finland-AnyTLS');
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+    });
+    await t.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('Финляндия, Хельсинки'), findsOneWidget);
+
+    await finish(t, st);
+    expect(st.exit, isNull);
+    expect(find.text('Финляндия, Хельсинки'), findsNothing);
+  });
+
+  test('exit IP is masked to the first two parts', () {
+    expect(const ExitInfo(ip: '203.0.113.42').masked, '203.0.*.*');
+    expect(const ExitInfo(ip: '2a01:4f8:c17:1::2').masked, '2a01:4f8:*');
+    expect(const ExitInfo(ip: '203.0.113.42', countryCode: 'US', city: 'LA').place, 'US, LA');
+  });
+
+  testWidgets('wide window: exit card, simple mode hides modes and extra sections', (t) async {
+    final st = newState(lang: 'en', ui: UiMode.simple);
+    st.exitLookup = (port, lang) async =>
+        const ExitInfo(ip: '203.0.113.42', countryCode: 'NL', country: 'Netherlands', city: 'Amsterdam');
+    await pumpApp(t, st, const Size(1280, 800));
+    expect(find.text('Rules'), findsNothing);
+    expect(find.text('Connections'), findsNothing);
+    expect(find.text('Logs'), findsNothing);
+    await t.tap(find.text('Subscriptions'));
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    await t.tap(find.text('Home'));
+    await t.pumpAndSettle();
+    expect(find.text('System proxy'), findsNothing); // no mode switch
+    await t.runAsync(() async {
+      await st.connect();
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+    });
+    await t.pumpAndSettle();
+    expect(find.text('Netherlands, Amsterdam'), findsOneWidget);
+    expect(find.text('203.0.*.*'), findsOneWidget);
+    await finish(t, st);
   });
 }
