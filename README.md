@@ -1,222 +1,208 @@
 # SolaHelm Client
 
-Клиент для Windows, Android и Linux, в котором есть **оба ядра — sing-box и mihomo**.
-Клиент сам выбирает ядро по конфигурации. Рассчитан в первую очередь на подписки
-[SolaHelm](https://github.com/sola21/solahelm), но принимает любые конфиги sing-box / Clash Meta.
+A client for Windows and Android (Linux comes next) with **both cores built in — sing-box and mihomo**.
+It picks the core from your config by itself. Made first of all for subscriptions from the
+[SolaHelm](https://github.com/sola21/solahelm) panel, but accepts any sing-box or Clash Meta config.
 
-> Статус: альфа, Windows и Android. Работает: подписки (sing-box JSON, Clash YAML и «универсальные» — список
-> ссылок `hysteria2://`, `vless://`, … в base64), импорт файла и текста из буфера, просмотр и правка профиля
-> с проверкой ядром, редактор правил, подключение в режимах TUN / системный прокси / только порт, узлы,
-> пинг, выбор узла, маршрутизация, соединения по процессам, журнал, трей, автозапуск, portable.
-> На Android — TUN для обоих ядер, плитка в шторке, соединения по приложениям. Linux — дальше.
+Bilingual interface (**English / Русский**), light and dark themes.
 
-### Настройки поверх профиля
+> Русская версия: [README.ru.md](README.ru.md)
 
-«Настройки → Подключение и TUN / Ядро» (`engine.Tuning`, применяются к обоим ядрам): стек TUN, строгая
-маршрутизация, MTU, сети в обход туннеля, исключения системного прокси, смешанный порт, доступ из
-локальной сети, IPv6, уровень логов, определение процессов. Применяются переподключением — при
-изменении во время подключения появляется кнопка «Переподключить». Ядра встроены в `solahelm-core.exe`
-и обновляются вместе с клиентом.
+> **Status: alpha.** Tested on Windows 11 and Android 16; expect rough edges — please report them in Issues.
 
-Свои DNS-серверы (только профили mihomo): `respect-rules`, удалённые резолверы через VPN, прямые — для
-VPN-серверов и прямого трафика; `prefer-h3` выключается.
+> **Disclaimer.** Independent community project, not affiliated with sing-box, mihomo, Clash or Hysteria. The
+> names of the cores are used only to say which core runs your config. You are responsible for using it in
+> compliance with the laws that apply to you.
 
-### Обновления, выход с сохранением ядра, горячая клавиша
+## Download
 
-- Клиент проверяет последний релиз `sola21/solahelm-client` (через `api.github.com`), скачивает zip
-  (через локальный порт ядра, если VPN включён), закрывается, а скрипт `install.ps1` распаковывает архив
-  поверх (папка `userdata` и `portable.txt` не трогаются) и запускает клиент снова. Выпуск релиза:
-  `tools\release.ps1` (сверяет версии в `pubspec.yaml` и `appVersion`, публикует оба zip через `gh`).
-- «Выйти, оставив VPN включённым» (меню трея): ядро получает `/detach` и перестаёт следить за окном;
-  адрес и секрет лежат в `core/session.json`, следующий запуск клиента подхватывает ядро через `/attach`.
-- Глобальная горячая клавиша вкл./выкл. VPN (Настройки → Поведение).
+Get the latest version from [Releases](https://github.com/sola21/solahelm-client/releases/latest):
 
-### Ссылки и правила
+| File | For |
+|---|---|
+| `SolaHelm-<version>-windows-x64.zip` | Windows 10/11 x64, data in `%APPDATA%\solahelm-client` |
+| `SolaHelm-<version>-windows-x64-portable.zip` | the same, with all data in a `userdata` folder next to the program |
+| `SolaHelm-<version>-android-arm64.apk` | Android 7.0+, almost every phone |
+| `SolaHelm-<version>-android-x86_64.apk` | Android emulators and some Chromebooks |
 
-- Список ссылок превращается в полноценный конфиг mihomo (`core/convert`, парсер ссылок — сам mihomo):
-  группы `Proxy` (ручной выбор) и `Auto` (по задержке), DNS через туннель, TUN, локальные сети напрямую.
-  Ссылки, которые mihomo не умеет (Naive, MASQUE), пропускаются.
-- Правила хранятся отдельно от подписки (обновление их не сбрасывает), в синтаксисе Clash:
-  `TYPE,PAYLOAD,TARGET[,no-resolve]`. Для профилей mihomo список целиком заменяет правила профиля; для
-  sing-box правила переводятся (DOMAIN*, IP-CIDR, порты, PROCESS-*, RULE-SET, NETWORK, MATCH → final) и
-  встают перед правилами профиля, сразу после служебных sniff/hijack-dns. Ядро проверяет правила до
-  сохранения. Быстро добавить правило можно из карточки соединения.
+Windows: unzip anywhere and run `solahelm_client.exe`. TUN mode needs administrator rights — the client
+asks for them when you connect. After that the client updates itself.
 
-> **Disclaimer.** Independent community project, not affiliated with sing-box, mihomo, Clash or Hysteria.
-> The names of the cores are used only to say which core runs your config.
+Android: install the APK (allow installs from that source), add a subscription, tap Connect and allow
+the VPN.
 
-## Сборка и установка (Windows)
+## Features
 
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\package-windows.ps1
-```
+- **Two cores in one client:** sing-box 1.14 and mihomo 1.19; the core is picked from the subscription format.
+- **Subscriptions:** sing-box JSON, Clash/mihomo YAML and "universal" ones — a list of `hysteria2://`,
+  `vless://`, `trojan://`, `tuic://`, `ss://`, `anytls://` … links, plain or base64. Import from a file or the
+  clipboard, traffic and expiry from the subscription headers, view and edit the profile with a check by the core.
+- **Modes:** TUN (all traffic of the device), system proxy (Windows), local port only.
+- **Nodes:** groups, latency, node selection, routing mode (rules / global / direct).
+- **Rules:** your own Clash-syntax list on top of the profile that survives subscription updates; a quick
+  rule from a connection's card.
+- **Connections** grouped by process (Windows) or app (Android), closing connections; the core's **log**.
+- **Windows:** tray menu (connect, mode, nodes, subscriptions), close to tray, start with Windows, start
+  minimized, a hotkey to toggle the VPN, exit while keeping the VPN on, auto-update, portable build.
+- **Android:** a quick-settings tile (VPN on/off without opening the app), a foldable notification.
+- **Settings on top of the profile:** TUN stack, strict route, MTU, networks that bypass the tunnel, system
+  proxy exceptions, port, LAN access, IPv6, log level, your own DNS servers.
 
-В `dist\` появятся два архива: обычный (данные в `%APPDATA%\solahelm-client`) и **portable** —
-рядом с `solahelm_client.exe` лежит `portable.txt`, и всё (настройки, подписки, состояние ядер) хранится
-в папке `userdata` рядом с программой. Нужно: Go 1.25+, Flutter 3.x, Visual Studio Build Tools (C++),
-включённый «Режим разработчика» Windows (для плагинов Flutter).
-
-## Android
-
-```bash
-bash tools/package-android.sh
-```
-
-В `dist/` появятся `SolaHelm-<версия>-android-arm64.apk` (телефоны) и `-x86_64.apk` (эмуляторы).
-Нужно: Go, `gomobile` (`go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`),
-Android SDK, NDK r28, JDK 17, Flutter. Минимальная версия Android — 7.0.
-
-Как устроено:
-
-- Ядра собраны в `solahelm-core.aar` (gomobile, пакет `core/mobile`) и работают внутри приложения: тот же
-  управляющий HTTP-сервис, что и `solahelm-core.exe`, только на `127.0.0.1` внутри процесса. Тег `cmfa` —
-  как в Clash Meta for Android: mihomo не пытается читать список пакетов системы.
-- TUN открывает `VpnService` (адреса `172.19.0.1/30`, `fdfe:dcba:9876::1/126`, DNS `172.19.0.2`), ядро
-  получает готовый дескриптор. Само приложение исключено из VPN, поэтому соединения ядер не зацикливаются.
-- Для sing-box — свой platform interface (`core/engine/singbox_android.go`): TUN из дескриптора, защита
-  сокетов, текущая сеть от `ConnectivityManager` вместо netlink, DNS `local` через DNS-серверы настоящей
-  сети, владелец соединения через `getConnectionOwnerUid` (в «Соединениях» видны приложения).
-- Плитка в шторке (`VpnTileService`) включает VPN без открытия приложения: ядро запоминает последний
-  удачный запуск (`last-start.json`) и повторяет его. Открытое приложение узнаёт об этом и обновляется.
-- Уведомление «VPN работает» Android требует обязательно; в настройках его можно свернуть (канал с
-  минимальной важностью) или отключить совсем в настройках Android.
-
-## Лицензия
-
-GPL-3.0 — см. [LICENSE](LICENSE). Ядро собирается вместе с sing-box и mihomo, которые распространяются
-под GPL-3.0, поэтому и весь проект под ней.
-
-### Как интерфейс управляет ядром
-
-Интерфейс запускает `solahelm-core.exe serve` (тот же бинарник, что `corectl`) и общается с ним по
-loopback-HTTP с секретом (`core/daemon`): `/fetch`, `/start`, `/stop`, `/status`, `/shutdown`. Секрет
-передаётся через файл, адрес — через ready-файл. Узлы, задержки, выбор узла, трафик и соединения интерфейс
-берёт напрямую из Clash API запущенного ядра — одинаково для sing-box и mihomo.
-
-TUN требует прав администратора: ядро отвечает `needs-elevation`, интерфейс предлагает перезапустить ядро
-через UAC (интерфейс сам остаётся без прав). Ядро следит за процессом интерфейса (`-parent`) и, если тот
-пропал, останавливается — TUN и системный прокси не остаются висеть. Системный прокси при включении
-запоминает прежние настройки WinINet и восстанавливает их при остановке.
-
-Без `solahelm-core` рядом (или с `--dart-define=DEMO=true`) приложение работает на демо-данных.
-
-### Десктоп
-
-- Закрытие окна сворачивает в трей (настраивается); выход — из меню значка в трее. В меню трея:
-  подключение, режим (TUN / системный прокси / порт), маршрутизация (правила / глобально / напрямую),
-  выбор узла в группах с задержкой, подписки.
-- Автозапуск с Windows (ключ Run, запуск с `--minimized`), запуск свёрнутым, автоподключение
-  (для TUN сразу запрос UAC).
-- Один экземпляр: повторный запуск показывает уже открытое окно.
-- Журнал — поток `/logs` из Clash API ядра; соединения — `/connections` с определением процесса
-  (`find_process` / `find-process-mode: always`), группировка по процессам, закрытые соединения,
-  детали и закрытие соединения.
-
-## Как устроено
+## How it works
 
 ```
 ┌──────────────── Flutter UI (app/) ────────────────┐
-│ подписки · узлы · пинг · трафик · соединения      │
-└───────────────┬───────────────────────────────────┘
-                │ Clash API (REST) — одинаковый у обоих ядер
-┌───────────────┴──────── core/ (Go) ───────────────┐
-│ detect: формат конфига → какое ядро                │
-│ engine.Manager: одно активное ядро, переключение  │
-│   ├─ sing-box 1.14.x (как библиотека)              │
-│   └─ mihomo 1.19.x  (как библиотека)               │
+│ subscriptions · nodes · latency · traffic · conns │
+└───────┬───────────────────────────┬───────────────┘
+        │ control (HTTP + secret)   │ Clash API — the same for both cores
+┌───────┴──────── core/ (Go) ───────┴───────────────┐
+│ daemon: /fetch /start /stop /status …              │
+│ detect: config format → which core                 │
+│ convert: links → mihomo config                     │
+│ engine.Manager: one active core                    │
+│   ├─ sing-box 1.14.x (as a library)                │
+│   └─ mihomo 1.19.x  (as a library)                 │
 └────────────────────────────────────────────────────┘
- Android: gomobile .aar + VpnService (TUN fd)
- Windows/Linux: привилегированная служба (TUN), UI — без прав
+ Windows: solahelm-core.exe next to the client, talks over 127.0.0.1
+ Android: gomobile .aar inside the app + VpnService (TUN fd)
 ```
 
-Оба ядра собираются **в один Go-бинарник** (проверено: ≈50 МБ, конфликтов зависимостей нет — у mihomo
-свои форки quic-go/gvisor/sing под другими путями модулей). Единственная правка: `replace` protobuf из
-`go.mod` mihomo не переносится — его форк не компилируется вместе с sing-box, обычный protobuf работает.
+Both cores are built **into one Go binary**: mihomo keeps its forks of quic-go/gvisor/sing under other
+module paths, so nothing conflicts. The only change: mihomo's protobuf `replace` from its `go.mod` is not
+carried over — that fork doesn't compile together with sing-box, the regular protobuf works.
 
-Интерфейсу не нужно знать, какое ядро запущено: sing-box получает `experimental.clash_api`, mihomo —
-`external-controller`, и дальше все запросы (`/proxies`, `/version`, задержки, трафик) одинаковые.
+The UI doesn't need to know which core runs: sing-box gets `experimental.clash_api`, mihomo gets
+`external-controller`, and from there all requests (`/proxies`, latency, traffic, `/connections`, `/logs`)
+are the same.
 
-### Выбор ядра
+### Picking the core
 
-| Вход | Ядро |
+| Input | Core |
 |---|---|
-| JSON с `outbounds` / `inbounds` / `route` … | sing-box |
-| YAML/JSON с `proxies` / `proxy-groups` / `rules` / `mixed-port` … | mihomo |
-| Ссылки (`hysteria2://`, `vless://` …), обычные или base64 | по поддержке протоколов, при равенстве — предпочтительное ядро (по умолчанию sing-box) |
+| JSON with `outbounds` / `inbounds` / `route` … | sing-box |
+| YAML/JSON with `proxies` / `proxy-groups` / `rules` / `mixed-port` … | mihomo |
+| Links (`hysteria2://`, `vless://` …), plain or base64 | mihomo: the links become a mihomo config |
 
-Поддержка протоколов клиентом (`core/detect/detect.go`, таблица `support`):
+A list of links becomes a complete mihomo config (`core/convert`; the link parser is mihomo's own):
+groups `Proxy` (manual) and `Auto` (by latency), DNS through the tunnel, TUN, local networks direct.
+Links mihomo can't run (Naive, MASQUE) are skipped — the subscription card says so.
 
-- оба ядра: Hysteria2, Hysteria, VLESS, VMess, Trojan, TUIC, Shadowsocks, AnyTLS, WireGuard, SOCKS, SSH;
-- только sing-box: Naive (нужна сборка с `with_naive_outbound` и cronet — пока не включено);
-- только mihomo: ShadowsocksR, Mieru, MASQUE (совместимость с MASQUE-сервером панели не проверена).
+### Windows
 
-## Структура
+The client starts `solahelm-core.exe serve` and talks to it over loopback HTTP with a secret. The core
+watches the client process and stops if it's gone, so TUN and the system proxy never stay behind. The
+system proxy saves the previous WinINet settings and restores them on stop. TUN needs administrator
+rights: the client itself runs without them, and the core is restarted elevated when needed (one UAC
+prompt, none when UAC is off); if that's refused, the client shows an error.
 
-- `core/engine` — обёртки над ядрами и `Manager` (одно ядро за раз).
-- `core/detect` — распознавание формата и выбор ядра.
-- `core/cmd/corectl` — консольная утилита: `detect`, `run`, `version`.
-- `app/` — Flutter-приложение (Windows, Android, Linux): `lib/screens` — экраны, `lib/state` — состояние
-  и настройки (`ui.json` в `%APPDATA%\solahelm-client`), `lib/l10n` — строки RU/EN, `lib/theme.dart` — темы.
-  Ширина ≥ 720 px — боковое меню, меньше — нижняя панель. Проверка: `flutter analyze`, `flutter test`.
-- Для сборки с Flutter-плагинами на Windows нужен включённый «Режим разработчика» (символические ссылки);
-  сейчас плагинов нет.
+"Exit, keep the VPN on" (tray menu): the core stops watching the window, its address and secret are kept
+in `core/session.json`, and the next start of the client picks the core up. Updates: the client checks the
+latest release of this repository, downloads the zip (through the core's local port when the VPN is on),
+and `install.ps1` unpacks it in place (the `userdata` folder and `portable.txt` are kept).
 
-## Сборка и проверка
+### Android
 
-Нужно: Go 1.25+, Flutter 3.x, для Android — SDK, NDK r28, JDK 17, для Windows — VS Build Tools (C++).
+- The cores are built into `solahelm-core.aar` (gomobile, package `core/mobile`) and run inside the app —
+  the same control service as `solahelm-core.exe`. Built with the `cmfa` tag, like Clash Meta for Android:
+  mihomo doesn't try to read the system package list.
+- `VpnService` opens the TUN (`172.19.0.1/30`, `fdfe:dcba:9876::1/126`, DNS `172.19.0.2`) and the core gets
+  the ready descriptor. The app itself is excluded from the VPN, so the cores' own connections don't loop.
+- sing-box gets its own platform interface (`core/engine/singbox_android.go`): TUN from the descriptor,
+  socket protection, the current network from `ConnectivityManager` instead of netlink, `local` DNS through
+  the real network's DNS servers, connection owners through `getConnectionOwnerUid`.
+- The quick-settings tile (`VpnTileService`) turns the VPN on without the UI: the core remembers the last
+  successful start (`last-start.json`) and repeats it; an open app notices and updates.
+- Android won't keep a VPN running in the background without a notification; in the settings it can be
+  folded (a minimum-importance channel) or turned off entirely in Android's settings.
+
+### Rules and settings
+
+Rules are kept apart from the subscription, in Clash syntax: `TYPE,PAYLOAD,TARGET[,no-resolve]`. For mihomo
+profiles the list replaces the profile's rules; for sing-box the rules are translated (DOMAIN*, IP-CIDR,
+ports, PROCESS-*, RULE-SET, NETWORK, MATCH → final) and go in front of the profile's rules, right after the
+sniff/hijack-dns service rules. The core checks the rules before they're saved.
+
+"Connection and TUN" and "Core" settings (`engine.Tuning`) apply to both cores on top of the profile; when
+changed while connected, a Reconnect button appears. Your own DNS servers (mihomo profiles only):
+`respect-rules`, remote resolvers through the VPN, direct ones for VPN servers and direct traffic.
+
+## Building
+
+You need Go 1.26+ and Flutter 3.x; for Windows — Visual Studio Build Tools (C++) and Windows Developer Mode
+(symlinks for Flutter plugins); for Android — Android SDK, NDK r28, JDK 17 and `gomobile`
+(`go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`).
+
+```powershell
+# Windows: two archives in dist\ (regular and portable)
+powershell -ExecutionPolicy Bypass -File tools\package-windows.ps1
+```
+
+```bash
+# Android: two APKs in dist/
+bash tools/package-android.sh
+```
+
+Android release builds are signed with the key from `app/android/key.properties` (not in git); without it,
+with the debug key. GitHub release: `tools\release.ps1` (checks that `pubspec.yaml` and `appVersion` match,
+publishes the archives and APKs with `gh`).
+
+Checks:
 
 ```powershell
 cd core
-.\build.ps1 -Test          # тесты + bin\corectl.exe
-.\bin\corectl.exe version
+.\build.ps1 -Test          # Go tests + bin\corectl.exe
 .\bin\corectl.exe detect https://panel.example.org/<prefix>/sub/<token>/clash
-.\bin\corectl.exe run    https://panel.example.org/<prefix>/sub/<token>/singbox
+.\bin\corectl.exe test   https://panel.example.org/<prefix>/sub/<token>/singbox
+cd ..\app
+flutter analyze; flutter test
 ```
 
-`run` поднимает Clash API на `127.0.0.1:9090` (флаги `-controller`, `-secret`, `-core`, `-prefer`, `-workdir`).
-Конфиги с TUN на Windows требуют запуска от администратора.
+`corectl test` runs a config in port-only mode (everything on 127.0.0.1), measures every proxy's latency
+through the Clash API, shows the group choices and the external IP, then stops. Without `solahelm-core`
+next to it (or with `--dart-define=DEMO=true`) the app runs on demo data.
 
-Тест `core/engine` в одном процессе запускает sing-box → mihomo → sing-box, проверяет трафик через
-локальный прокси каждого ядра и ответ Clash API.
+## Layout
 
-## Что проверено
+- `core/engine` — core wrappers, `Manager` (one core at a time), rules, settings, the Android platform.
+- `core/detect` — format detection and core choice; `core/convert` — links → mihomo config.
+- `core/daemon` — the control HTTP service; `core/mobile` — the Android API (gomobile).
+- `core/cmd/corectl` — the command-line tool and `solahelm-core.exe`: `detect`, `run`, `test`, `serve`, `version`.
+- `app/` — the Flutter app: `lib/screens` — screens, `lib/state` — state and settings, `lib/core` — talking to
+  the core, `lib/l10n` — RU/EN strings; `android/` — VpnService, the tile, the bridge to the core.
+- `tools/` — building, packaging, releasing.
 
-- Все подписки SolaHelm (sing-box JSON, Clash YAML со встроенным шаблоном и обоими пресетами
-  маршрутизации) распознаются и стартуют в своём ядре; все прокси видны через Clash API.
-- Каркас Flutter собирается под Windows и Android.
+## What's tested
 
-- Настоящая подписка SolaHelm (3 сервера, 2026-11-08) на тестовой Windows-машине, режим «только порт»:
-  `corectl test …/singbox` — sing-box, 12 из 12 прокси отвечают; `corectl test …/clash` — mihomo, 12 из 12;
-  трафик через локальный порт выходит через VPN-сервер. Naive не проверен (нет в JSON панели, нет в mihomo).
+- SolaHelm subscriptions (sing-box JSON, Clash YAML with the built-in template and both routing presets,
+  universal links) are detected and start in their core; every proxy shows up through the Clash API.
+- Windows 11: port-only, system proxy (restoring the previous settings) and TUN for both cores; the core
+  stops when the client disappears; exit with the VPN kept on; auto-update.
+- Android 16 (arm64): a universal subscription (mihomo) and a sing-box JSON subscription in TUN mode —
+  traffic goes through the VPN; connect, disconnect, reconnect; the tile with the app closed; switching
+  Wi-Fi ↔ mobile data.
+- Integration test `app/test/daemon_integration_test.dart` (needs `SOLAHELM_CORE` and `SOLAHELM_SUB`) —
+  subscription, start, nodes, latency, node selection, traffic, stop for both cores.
 
-- TUN на той же машине (`scripts/tun-test.ps1`, стек gvisor, слушатели на 127.0.0.1, автостоп):
-  sing-box — весь трафик машины уходит в VPN, DNS и локальная сеть работают, после остановки маршруты
-  возвращаются; mihomo — то же, но с DNS-настройками шаблона панели (DoH Cloudflare + `prefer-h3`)
-  резолвер периодически отвечает за 5 с ошибкой, а `curl https://www.google.com` без `-4` зависает
-  (с `-4` — 0,26 с). Нужно поправить DNS в шаблоне mihomo панели.
+## Known issues
 
-- Связка интерфейс ↔ ядро: `app/test/daemon_integration_test.dart` (нужны `SOLAHELM_CORE` и `SOLAHELM_SUB`) —
-  загрузка подписки, запуск, узлы, пинг, выбор узла, трафик, остановка для обоих ядер.
-  `core/scripts/daemon-test.ps1` (Windows, от администратора) — TUN через демон, системный прокси с
-  восстановлением прежних настроек, остановка ядра при исчезновении интерфейса.
+- mihomo with the panel template's DNS settings (Cloudflare DoH + `prefer-h3`) sometimes answers slowly in
+  TUN on Windows. "Your own DNS servers" in the core settings helps.
+- mihomo keeps `cache.db` open until the process ends, so its working folder is permanent.
+- If a port from the config is taken by another client, mihomo carries on without that port.
+- The panel's sing-box JSON subscription has no Naive, the links do (mihomo skips them).
 
-`corectl test` запускает конфиг в режиме «только порт» (без TUN, всё на 127.0.0.1, порт 17890, API 19090),
-через Clash API меряет задержку каждого прокси, показывает выбор групп и внешний IP, затем останавливается.
+## Roadmap
 
-- Android 16 (Nothing A015, arm64): универсальная подписка (mihomo) и JSON-подписка sing-box в режиме
-  TUN — трафик идёт через VPN, подключение/отключение/переподключение, плитка при закрытом приложении,
-  смена Wi-Fi ↔ мобильная сеть видна ядру.
+1. Android: split tunneling (choose apps), app names instead of package names, auto-update.
+2. Linux: build, AppImage/deb.
 
-## Известные особенности
+## License
 
-- mihomo держит `cache.db` открытым до конца процесса (`sync.Once`), рабочая папка mihomo должна быть
-  постоянной.
-- Если порты из конфига заняты (например, уже запущен другой Clash-клиент на 7890), mihomo пишет ошибку
-  и продолжает без этого порта. Клиент должен проверять порты сам.
-- JSON-подписка sing-box из панели не содержит Naive, а ссылки — содержат.
+GPL-3.0 — see [LICENSE](LICENSE). The client is built together with [sing-box](https://github.com/SagerNet/sing-box)
+and [mihomo](https://github.com/MetaCubeX/mihomo), which are GPL-3.0, so the whole project is too.
 
-## Дальше
+## Made with Claude
 
-1. Android: раздельное туннелирование (выбор приложений), названия приложений вместо пакетов,
-   автообновление.
-2. Linux: сборка в WSL2/Linux, AppImage/deb.
+Everything in this project — the code, the build, the documentation — was created with the help of **Claude**,
+the AI assistant by **Anthropic**, working as a coding agent (Claude Code). Many thanks to Anthropic for building
+it and making this kind of work possible. Review the code before relying on it.
