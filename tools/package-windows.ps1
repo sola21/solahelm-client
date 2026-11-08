@@ -1,6 +1,7 @@
 ﻿# Builds the core and the Windows app and packs them into dist\:
 #   SolaHelm-<version>-windows-x64.zip           regular: data in %APPDATA%\solahelm-client
 #   SolaHelm-<version>-windows-x64-portable.zip  portable: data in .\userdata next to the exe
+#   SolaHelm-<version>-windows-x64-setup.exe     installer (Inno Setup 6, per user, no admin rights)
 #
 #   powershell -ExecutionPolicy Bypass -File tools\package-windows.ps1 [-SkipBuild]
 param([switch]$SkipBuild)
@@ -50,6 +51,19 @@ foreach ($portable in $false, $true) {
     $zip = Join-Path $dist "$folder.zip"
     if (Test-Path $zip) { Remove-Item -Force $zip }
     Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
-    Remove-Item -Recurse -Force $stage
     '{0}  {1:N1} MB' -f $zip, ((Get-Item $zip).Length / 1MB)
+    if (-not $portable) {
+        # The installer packs the same files as the regular zip.
+        $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+                  "$env:ProgramFiles\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if ($iscc) {
+            & $iscc /Q "/DAppVersion=$version" "/DSourceDir=$stage" (Join-Path $root 'tools\windows-setup.iss')
+            if ($LASTEXITCODE) { throw "Inno Setup failed ($LASTEXITCODE)" }
+            $setup = Join-Path $dist "$name-setup.exe"
+            '{0}  {1:N1} MB' -f $setup, ((Get-Item $setup).Length / 1MB)
+        } else {
+            Write-Warning 'Inno Setup 6 is not installed (winget install JRSoftware.InnoSetup): no setup.exe'
+        }
+    }
+    Remove-Item -Recurse -Force $stage
 }

@@ -38,11 +38,18 @@ int compareVersions(String a, String b) {
 
 /// Checks GitHub Releases and installs updates of the Windows build.
 class Updater {
-  Updater({required this.currentVersion, required this.portable, this.repo = 'sola21/solahelm-client'});
+  Updater({required this.currentVersion, required this.portable, this.repo = 'sola21/solahelm-client', bool? installed})
+      : installed = installed ?? (!portable && _hasUninstaller(File(Platform.resolvedExecutable).parent.path));
 
   final String currentVersion;
   final bool portable;
   final String repo;
+
+  /// Installed by SolaHelm-*-setup.exe (Inno Setup leaves unins000.exe):
+  /// updated by the next setup, so Windows' list of programs stays right.
+  final bool installed;
+
+  static bool _hasUninstaller(String dir) => File('$dir${Platform.pathSeparator}unins000.exe').existsSync();
 
   /// After check(): whether the repository has any release at all.
   bool lastHadRelease = false;
@@ -63,10 +70,16 @@ class Updater {
     if (m == null) return null; // no releases yet
     final tag = (m['tag_name'] ?? '').toString();
     if (tag.isEmpty || compareVersions(tag, currentVersion) <= 0) return null;
-    final want = portable ? '-windows-x64-portable.zip' : '-windows-x64.zip';
-    for (final a in (m['assets'] as List?) ?? const []) {
-      final name = (a['name'] ?? '').toString();
-      if (name.endsWith(want)) {
+    // An installed copy prefers the setup, and falls back to the zip.
+    final wants = [
+      if (portable) '-windows-x64-portable.zip',
+      if (!portable && installed) '-windows-x64-setup.exe',
+      if (!portable) '-windows-x64.zip',
+    ];
+    final assets = ((m['assets'] as List?) ?? const []).cast<Map>();
+    for (final want in wants) {
+      final a = assets.where((a) => (a['name'] ?? '').toString().endsWith(want)).firstOrNull;
+      if (a != null) {
         return UpdateInfo(
           version: tag.replaceFirst(RegExp(r'^v'), ''),
           notes: (m['body'] ?? '').toString(),
@@ -105,7 +118,8 @@ class Updater {
   /// Downloads the update zip; [onProgress] gets 0..1.
   Future<File> download(UpdateInfo info, {int? proxyPort, void Function(double)? onProgress}) async {
     final dir = await Directory.systemTemp.createTemp('solahelm-update-');
-    final file = File('${dir.path}${Platform.pathSeparator}update.zip');
+    final name = info.url.toLowerCase().endsWith('.exe') ? 'update-setup.exe' : 'update.zip';
+    final file = File('${dir.path}${Platform.pathSeparator}$name');
     final c = _client(proxyPort);
     try {
       final req = await c.getUrl(Uri.parse(info.url));
@@ -127,29 +141,36 @@ class Updater {
     }
   }
 
-  /// Writes the installer script and starts it detached. The caller exits
-  /// right after; the script waits for this process, unpacks [zip] over the
-  /// app folder (userdata and portable.txt stay), and starts the app again.
-  Future<void> install(File zip, {required bool reconnect}) async {
-    final appDir = File(Platform.resolvedExecutable).parent.path;
-    final exe = Platform.resolvedExecutable;
-    final script = File('${zip.parent.path}${Platform.pathSeparator}install.ps1');
+  /// Writes the installer script and starts it. The caller exits right
+  /// after; the script waits for this process, then unpacks the zip over the
+  /// app folder (userdata and portable.txt stay) or runs the setup silently,
+  /// and starts the app again. [appDir], [exe] and [start] are for tests.
+  Future<void> install(File update, {required bool reconnect, String? appDir, String? exe, bool start = true}) async {
+    appDir ??= File(Platform.resolvedExecutable).parent.path;
+    exe ??= Platform.resolvedExecutable;
+    final setup = update.path.toLowerCase().endsWith('.exe');
+    final script = File('${update.parent.path}${Platform.pathSeparator}install.ps1');
     await script.writeAsString(installScript, flush: true);
     final args = [
       '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', script.path,
-      '-WaitPid', '$pid', '-Zip', zip.path, '-AppDir', appDir, '-Exe', exe,
+      '-WaitPid', '$pid', if (setup) ...['-Setup', update.path] else ...['-Zip', update.path],
+      '-AppDir', appDir, '-Exe', exe,
       if (reconnect) '-Reconnect',
+      if (!start) '-NoStart',
     ];
+    // Not ProcessStartMode.detached: that starts powershell.exe without any
+    // console (DETACHED_PROCESS) and it quits at once, so nothing got installed.
+    // A normal child keeps running after this app exits.
     if (_writable(appDir)) {
-      await Process.start('powershell.exe', args, mode: ProcessStartMode.detached);
+      await Process.start('powershell.exe', args);
     } else {
       // e.g. installed under Program Files: run the installer elevated.
       String q(String s) => "'${s.replaceAll("'", "''")}'";
       final argLine = args.map((a) => a.startsWith('-') ? a : '"$a"').join(' ');
       await Process.start('powershell.exe', [
-        '-NoProfile', '-Command',
+        '-NoProfile', '-WindowStyle', 'Hidden', '-Command',
         'Start-Process -FilePath powershell.exe -ArgumentList ${q(argLine)} -Verb RunAs -WindowStyle Hidden',
-      ], mode: ProcessStartMode.detached);
+      ]);
     }
   }
 
@@ -166,10 +187,11 @@ class Updater {
 
   /// The installer, kept here so the app can always write it out.
   static const installScript = r'''
-param([int]$WaitPid, [string]$Zip, [string]$AppDir, [string]$Exe, [switch]$Reconnect, [switch]$NoStart)
+param([int]$WaitPid, [string]$Zip, [string]$Setup, [string]$AppDir, [string]$Exe, [switch]$Reconnect, [switch]$NoStart)
 $ErrorActionPreference = 'Stop'
-$log = Join-Path (Split-Path -Parent $Zip) 'install.log'
+$log = Join-Path (Split-Path -Parent $(if ($Setup) { $Setup } else { $Zip })) 'install.log'
 function Log($m) { Add-Content -Path $log -Value ("{0:HH:mm:ss} {1}" -f (Get-Date), $m) }
+Log 'started'
 try {
   if ($WaitPid) {
     $p = Get-Process -Id $WaitPid -ErrorAction SilentlyContinue
@@ -180,12 +202,17 @@ try {
   for ($i = 0; $i -lt 40; $i++) {
     try { [IO.File]::Open($core, 'Open', 'ReadWrite', 'None').Close(); break } catch { Start-Sleep -Milliseconds 250 }
   }
-  $stage = Join-Path (Split-Path -Parent $Zip) 'new'
-  if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
-  Expand-Archive -Path $Zip -DestinationPath $stage
-  if (-not (Test-Path (Join-Path $stage 'solahelm_client.exe'))) { throw 'the archive has no solahelm_client.exe' }
-  Get-ChildItem $stage | Where-Object { $_.Name -notin @('userdata', 'portable.txt') } | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $AppDir -Recurse -Force
+  if ($Setup) {
+    $p = Start-Process -FilePath $Setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -PassThru -Wait
+    if ($p.ExitCode -ne 0) { throw ("setup exit code " + $p.ExitCode) }
+  } else {
+    $stage = Join-Path (Split-Path -Parent $Zip) 'new'
+    if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+    Expand-Archive -Path $Zip -DestinationPath $stage
+    if (-not (Test-Path (Join-Path $stage 'solahelm_client.exe'))) { throw 'the archive has no solahelm_client.exe' }
+    Get-ChildItem $stage | Where-Object { $_.Name -notin @('userdata', 'portable.txt') } | ForEach-Object {
+      Copy-Item -Path $_.FullName -Destination $AppDir -Recurse -Force
+    }
   }
   Log 'updated'
 } catch {

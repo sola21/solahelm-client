@@ -5,6 +5,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 
 import '../l10n/app_localizations.dart';
 import '../core/android_backend.dart';
+import '../core/open_url.dart';
 import '../desktop.dart';
 import '../models.dart';
 import '../state/scope.dart';
@@ -13,9 +14,10 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.2.1';
+const appVersion = '0.2.2';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
+const repoUrl = 'https://github.com/sola21/solahelm-client';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -64,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
           showSelectedIcon: false,
           segments: [
             ButtonSegment(value: '', label: Text(s.languageSystem)),
-            const ButtonSegment(value: 'ru', label: Text('Русский')),
+            const ButtonSegment(value: 'ru', label: Text('Р СѓСЃСЃРєРёР№')),
             const ButtonSegment(value: 'en', label: Text('English')),
           ],
           selected: {settings.languageCode ?? ''},
@@ -202,9 +204,19 @@ class SettingsScreen extends StatelessWidget {
           const _UpdatesCard(),
         ],
         label(s.settingsAbout),
-        Text('SolaHelm Client $appVersion${isPortable ? ' · portable' : ''}', style: const TextStyle(fontSize: 14)),
+        Text('SolaHelm Client $appVersion${isPortable ? ' В· portable' : ''}', style: const TextStyle(fontSize: 14)),
         const SizedBox(height: 2),
         Text(s.coreVersions(singBoxVersion, mihomoVersion), style: TextStyle(fontSize: 12, color: p.muted)),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4), visualDensity: VisualDensity.compact),
+            onPressed: () => openUrl(repoUrl).catchError((_) {}),
+            icon: const Icon(Icons.open_in_new, size: 16),
+            label: const Text('github.com/sola21/solahelm-client'),
+          ),
+        ),
       ],
     );
   }

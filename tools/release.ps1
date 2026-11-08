@@ -22,7 +22,9 @@ $zips = @("$root\dist\SolaHelm-$pubspec-windows-x64.zip", "$root\dist\SolaHelm-$
 foreach ($z in $zips) { if (-not (Test-Path $z)) { throw "missing $z" } }
 $apks = @(Get-ChildItem "$root\dist\SolaHelm-$pubspec-android-*.apk" -ErrorAction SilentlyContinue | ForEach-Object FullName)
 if ($apks.Count -eq 0) { Write-Warning "no Android APKs for $pubspec in dist (tools/package-android.sh); publishing Windows only" }
-$assets = $zips + $apks
+$setups = @(Get-ChildItem "$root\dist\SolaHelm-$pubspec-windows-x64-setup.exe" -ErrorAction SilentlyContinue | ForEach-Object FullName)
+if ($setups.Count -eq 0) { Write-Warning "no setup.exe for $pubspec in dist (Inno Setup missing?)" }
+$assets = $zips + $setups + $apks
 
 if ($Proxy) { $env:HTTPS_PROXY = $Proxy; $env:HTTP_PROXY = $Proxy }
 $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source

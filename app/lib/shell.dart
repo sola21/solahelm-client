@@ -192,13 +192,18 @@ class _SideStatus extends StatelessWidget {
     final on = st.status == LinkStatus.connected;
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Row(children: [
-        Icon(Icons.circle, size: 10, color: on ? p.success : p.muted),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(on ? s.statusConnected : s.statusDisconnected, style: TextStyle(fontSize: 13, color: p.muted)),
-        ),
-        CoreChip(st.core),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          Icon(Icons.circle, size: 10, color: on ? p.success : p.muted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(on ? s.statusConnected : s.statusDisconnected, style: TextStyle(fontSize: 13, color: p.muted)),
+          ),
+          if (!st.settings.simple) CoreChip(st.core),
+        ]),
+        const SizedBox(height: 6),
+        Text('SolaHelm Client $appVersion',
+            style: TextStyle(fontSize: 11, color: p.muted.withValues(alpha: 0.75))),
       ]),
     );
   }

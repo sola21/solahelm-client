@@ -76,6 +76,13 @@ class MainActivity : FlutterActivity() {
                     CoreControl.setNotificationVisible(this, call.argument<Boolean>("visible") ?: true)
                     result.success(null)
                 }
+                "openUrl" -> {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(call.argument<String>("url"))))
+                    } catch (_: Exception) {
+                    }
+                    result.success(null)
+                }
                 "openNotificationSettings" -> {
                     openNotificationSettings()
                     result.success(null)

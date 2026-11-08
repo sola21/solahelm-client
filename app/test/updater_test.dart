@@ -60,6 +60,34 @@ void main() {
     expect(File('${updDir.path}${sep}install.log').readAsStringSync(), contains('updated'));
   });
 
+  test('Updater.install really starts the installer (regression: detached powershell died at once)', () async {
+    if (!Platform.isWindows) return;
+    final root = await Directory.systemTemp.createTemp('solahelm-launch-');
+    addTearDown(() => root.delete(recursive: true));
+    final sep = Platform.pathSeparator;
+    final app = Directory('${root.path}${sep}app')..createSync();
+    File('${app.path}${sep}solahelm_client.exe').writeAsStringSync('old exe');
+    final src = Directory('${root.path}${sep}src')..createSync();
+    File('${src.path}${sep}solahelm_client.exe').writeAsStringSync('new exe');
+    final updDir = Directory('${root.path}${sep}upd')..createSync();
+    final zip = File('${updDir.path}${sep}update.zip');
+    final z = await Process.run('powershell', [
+      '-NoProfile', '-Command', "Compress-Archive -Path '${src.path}$sep*' -DestinationPath '${zip.path}'",
+    ]);
+    expect(z.exitCode, 0, reason: '${z.stderr}');
+
+    await Updater(currentVersion: '0.0.1', portable: false, installed: false)
+        .install(zip, reconnect: false, appDir: app.path, exe: '${app.path}${sep}solahelm_client.exe', start: false);
+    // The script waits for this process (still running here), so -WaitPid would block: it is
+    // this test's pid; WaitForExit(30000) gives up after 30 s at most.
+    final log = File('${updDir.path}${sep}install.log');
+    for (var i = 0; i < 120 && !(log.existsSync() && log.readAsStringSync().contains('updated')); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+    expect(log.existsSync() ? log.readAsStringSync() : 'no install.log', contains('updated'));
+    expect(File('${app.path}${sep}solahelm_client.exe').readAsStringSync(), 'new exe');
+  }, timeout: const Timeout(Duration(seconds: 90)));
+
   test('check against the real repository', () async {
     if (Platform.environment['SOLAHELM_NET_TESTS'] == null) return;
     final u = Updater(currentVersion: '0.0.1', portable: false);

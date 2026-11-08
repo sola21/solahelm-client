@@ -20,12 +20,13 @@
 
 | Файл | Для чего |
 |---|---|
-| `SolaHelm-<версия>-windows-x64.zip` | Windows 10/11 x64, данные в `%APPDATA%\solahelm-client` |
+| `SolaHelm-<версия>-windows-x64-setup.exe` | Windows 10/11 x64, установщик: без прав администратора, ярлыки, удаление через «Приложения» |
+| `SolaHelm-<версия>-windows-x64.zip` | то же без установки, данные в `%APPDATA%\solahelm-client` |
 | `SolaHelm-<версия>-windows-x64-portable.zip` | то же, но все данные в папке `userdata` рядом с программой |
 | `SolaHelm-<версия>-android-arm64.apk` | Android 7.0+, почти все телефоны |
 | `SolaHelm-<версия>-android-x86_64.apk` | эмуляторы Android и некоторые Chromebook |
 
-Windows: распакуйте в любую папку и запустите `solahelm_client.exe`. Для режима TUN нужны права
+Windows: запустите setup.exe или распакуйте zip в любую папку и запустите `solahelm_client.exe`. Для режима TUN нужны права
 администратора — клиент запросит их при подключении. Дальше клиент обновляется сам.
 
 Android: установите APK (разрешите установку из этого источника), добавьте подписку, нажмите
@@ -139,7 +140,7 @@ mihomo): `respect-rules`, удалённые резолверы через VPN, 
 `gomobile` (`go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`).
 
 ```powershell
-# Windows: два архива в dist\ (обычный и portable)
+# Windows: setup.exe и два архива в dist\ (обычный и portable); для setup.exe нужен Inno Setup 6
 powershell -ExecutionPolicy Bypass -File tools\package-windows.ps1
 ```
 

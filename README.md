@@ -20,12 +20,13 @@ Get the latest version from [Releases](https://github.com/sola21/solahelm-client
 
 | File | For |
 |---|---|
-| `SolaHelm-<version>-windows-x64.zip` | Windows 10/11 x64, data in `%APPDATA%\solahelm-client` |
+| `SolaHelm-<version>-windows-x64-setup.exe` | Windows 10/11 x64, installer: no admin rights, shortcuts, uninstall from Apps |
+| `SolaHelm-<version>-windows-x64.zip` | the same without installing, data in `%APPDATA%\solahelm-client` |
 | `SolaHelm-<version>-windows-x64-portable.zip` | the same, with all data in a `userdata` folder next to the program |
 | `SolaHelm-<version>-android-arm64.apk` | Android 7.0+, almost every phone |
 | `SolaHelm-<version>-android-x86_64.apk` | Android emulators and some Chromebooks |
 
-Windows: unzip anywhere and run `solahelm_client.exe`. TUN mode needs administrator rights — the client
+Windows: run the setup.exe, or unzip anywhere and run `solahelm_client.exe`. TUN mode needs administrator rights — the client
 asks for them when you connect. After that the client updates itself.
 
 Android: install the APK (allow installs from that source), add a subscription, tap Connect and allow
@@ -138,7 +139,7 @@ You need Go 1.26+ and Flutter 3.x; for Windows — Visual Studio Build Tools (C+
 (`go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`).
 
 ```powershell
-# Windows: two archives in dist\ (regular and portable)
+# Windows: setup.exe and two archives in dist\ (regular and portable); setup.exe needs Inno Setup 6
 powershell -ExecutionPolicy Bypass -File tools\package-windows.ps1
 ```
 
