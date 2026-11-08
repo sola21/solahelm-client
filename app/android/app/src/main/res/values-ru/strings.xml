@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vpn_connected">VPN включён</string>
+    <string name="channel_vpn">VPN работает</string>
+    <string name="channel_vpn_quiet">VPN работает (свёрнуто)</string>
+    <string name="tile_label">SolaHelm</string>
+    <string name="tile_on">Подключено</string>
+    <string name="tile_off">Выключено</string>
+    <string name="tile_connecting">Подключение…</string>
+    <string name="tile_first_connect">Сначала подключитесь один раз в приложении</string>
+    <string name="tile_error">SolaHelm: %1$s</string>
+    <string name="action_disconnect">Отключить</string>
+</resources>

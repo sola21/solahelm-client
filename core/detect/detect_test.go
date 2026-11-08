@@ -36,6 +36,9 @@ func TestDetect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if r.Format == ShareLinks && r.LinkCount != len(r.Links) {
+				t.Errorf("LinkCount %d, links %d", r.LinkCount, len(r.Links))
+			}
 			if r.Format != c.format || r.Core != c.core || len(r.Unsupported) != c.unsup {
 				t.Fatalf("got format=%s core=%s unsupported=%v (%s)", r.Format, r.Core, r.Unsupported, r.Reason)
 			}

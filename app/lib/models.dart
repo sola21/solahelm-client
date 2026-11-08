@@ -59,6 +59,7 @@ class Subscription {
     this.core,
     this.protocols = const [],
     this.linkCount = 0,
+    this.unsupported = const [],
     this.upload = 0,
     this.download = 0,
     this.total = 0,
@@ -78,6 +79,7 @@ class Subscription {
   final CoreKind? core; // what auto-detection picked
   final List<String> protocols;
   final int linkCount;
+  final List<String> unsupported; // link protocols that were skipped
   final int upload, download, total; // bytes; total 0 = unlimited
   final DateTime? expire; // null: never
   final DateTime? updatedAt;
@@ -98,6 +100,9 @@ class Subscription {
     SubFormat? format,
     CoreKind? core,
     DateTime? updatedAt,
+    List<String>? protocols,
+    int? linkCount,
+    List<String>? unsupported,
     List<String>? Function()? rules,
     bool? rulesReplace,
   }) =>
@@ -107,8 +112,9 @@ class Subscription {
         url: url,
         format: format ?? this.format,
         core: core ?? this.core,
-        protocols: protocols,
-        linkCount: linkCount,
+        protocols: protocols ?? this.protocols,
+        linkCount: linkCount ?? this.linkCount,
+        unsupported: unsupported ?? this.unsupported,
         upload: upload,
         download: download,
         total: total,
@@ -126,14 +132,6 @@ class Subscription {
   double? get usedGb => loaded ? (upload + download) / _gb : null;
   double? get totalGb => total > 0 ? total / _gb : null;
 
-  /// A protocol that only one core supports and so forced the choice.
-  String? get onlyProtocol {
-    if (protocols.contains('naive')) return 'Naive';
-    if (protocols.contains('shadowsocksr')) return 'ShadowsocksR';
-    if (protocols.contains('mieru')) return 'Mieru';
-    return null;
-  }
-
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -142,6 +140,7 @@ class Subscription {
         'core': core?.name,
         'protocols': protocols,
         'linkCount': linkCount,
+        'unsupported': unsupported,
         'upload': upload,
         'download': download,
         'total': total,
@@ -162,6 +161,7 @@ class Subscription {
         core: CoreKind.values.asNameMap()[m['core']],
         protocols: (m['protocols'] as List?)?.cast<String>() ?? const [],
         linkCount: (m['linkCount'] as num?)?.toInt() ?? 0,
+        unsupported: (m['unsupported'] as List?)?.cast<String>() ?? const [],
         upload: (m['upload'] as num?)?.toInt() ?? 0,
         download: (m['download'] as num?)?.toInt() ?? 0,
         total: (m['total'] as num?)?.toInt() ?? 0,
@@ -277,12 +277,24 @@ class ProfileRulesInfo {
 
 /// Result of checking a config (and rules) with the core, without starting it.
 class ValidateResult {
-  const ValidateResult({required this.ok, this.format, this.core, this.error, this.converted = 0});
+  const ValidateResult({
+    required this.ok,
+    this.format,
+    this.core,
+    this.error,
+    this.converted = 0,
+    this.protocols = const [],
+    this.linkCount = 0,
+    this.unsupported = const [],
+  });
   final bool ok;
   final SubFormat? format;
   final CoreKind? core;
   final String? error;
   final int converted; // proxies made from share links
+  final List<String> protocols;
+  final int linkCount;
+  final List<String> unsupported; // link protocols the core can't run (skipped)
 }
 
 /// One Clash rule line split into its parts.

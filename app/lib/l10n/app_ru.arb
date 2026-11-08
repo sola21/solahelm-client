@@ -151,13 +151,10 @@
       }
     }
   },
-  "reasonOnlyIn": "{protocol} есть только в {core}",
-  "@reasonOnlyIn": {
+  "linksSkipped": "пропущены: {protocols}",
+  "@linksSkipped": {
     "placeholders": {
-      "protocol": {
-        "type": "String"
-      },
-      "core": {
+      "protocols": {
         "type": "String"
       }
     }
@@ -543,5 +540,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "settingsAndroid": "Android",
+  "vpnNotification": "Уведомление «VPN работает»",
+  "vpnNotificationHint": "Без уведомления Android не даёт VPN работать в фоне. Если выключить, оно сворачивается: без значка в строке состояния, в самом низу шторки.",
+  "vpnNotificationHide": "Убрать совсем",
+  "vpnNotificationHideHint": "Откроются настройки Android: выключите там «VPN работает (свёрнуто)». VPN продолжит работать, значок ключа останется — его показывает система.",
+  "quickTile": "Кнопка в шторке",
+  "quickTileHint": "Откройте шторку, нажмите карандаш и перетащите плитку SolaHelm. Она включает последнее подключение и выключает VPN, не открывая приложение."
 }

@@ -18,6 +18,7 @@ class FetchResult {
     this.core,
     this.protocols = const [],
     this.linkCount = 0,
+    this.unsupported = const [],
     this.title,
     this.upload = 0,
     this.download = 0,
@@ -31,6 +32,7 @@ class FetchResult {
   final CoreKind? core;
   final List<String> protocols;
   final int linkCount;
+  final List<String> unsupported; // link protocols the core can't run (skipped)
   final String? title;
   final int upload, download, total;
   final DateTime? expire;

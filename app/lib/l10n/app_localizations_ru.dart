@@ -207,8 +207,8 @@ class SRu extends S {
   }
 
   @override
-  String reasonOnlyIn(String protocol, String core) {
-    return '$protocol есть только в $core';
+  String linksSkipped(String protocols) {
+    return 'пропущены: $protocols';
   }
 
   @override
@@ -918,4 +918,28 @@ class SRu extends S {
   @override
   String get updateHint =>
       'Клиент скачает архив (через VPN, если он включён), закроется, обновится и запустится снова. Настройки и подписки сохранятся.';
+
+  @override
+  String get settingsAndroid => 'Android';
+
+  @override
+  String get vpnNotification => 'Уведомление «VPN работает»';
+
+  @override
+  String get vpnNotificationHint =>
+      'Без уведомления Android не даёт VPN работать в фоне. Если выключить, оно сворачивается: без значка в строке состояния, в самом низу шторки.';
+
+  @override
+  String get vpnNotificationHide => 'Убрать совсем';
+
+  @override
+  String get vpnNotificationHideHint =>
+      'Откроются настройки Android: выключите там «VPN работает (свёрнуто)». VPN продолжит работать, значок ключа останется — его показывает система.';
+
+  @override
+  String get quickTile => 'Кнопка в шторке';
+
+  @override
+  String get quickTileHint =>
+      'Откройте шторку, нажмите карандаш и перетащите плитку SolaHelm. Она включает последнее подключение и выключает VPN, не открывая приложение.';
 }

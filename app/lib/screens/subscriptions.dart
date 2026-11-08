@@ -213,7 +213,6 @@ class _SubscriptionCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final locale = Localizations.localeOf(context).toString();
 
-    final only = sub.onlyProtocol;
     final details = <String>[
       if (sub.format != null)
         switch (sub.format!) {
@@ -221,7 +220,7 @@ class _SubscriptionCard extends StatelessWidget {
           SubFormat.clashYaml => s.formatClash,
           SubFormat.links => s.formatLinks(sub.linkCount > 0 ? sub.linkCount : sub.protocols.length),
         },
-      if (only != null && sub.core != null) s.reasonOnlyIn(only, sub.core!.label) else if (sub.loaded) s.reasonByFormat,
+      if (sub.unsupported.isNotEmpty) s.linksSkipped(sub.unsupported.join(', ')) else if (sub.loaded) s.reasonByFormat,
       if (sub.updatedAt != null) s.updatedAt(DateFormat.Md(locale).add_Hm().format(sub.updatedAt!)),
     ];
     final badges = <Widget>[

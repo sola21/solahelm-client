@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"net/netip"
 	"os"
 	"strings"
 
@@ -61,6 +62,27 @@ func (m *mihomoEngine) Start(raw []byte, opts Options) error {
 	}
 	if opts.Tuning != nil {
 		hubOpts = append(hubOpts, func(c *config.Config) { applyMihomoTuning(c, opts.Tuning) })
+	}
+	if opts.TunFD > 0 {
+		hubOpts = append(hubOpts, func(c *config.Config) {
+			t := &c.General.Tun
+			t.Enable = true
+			t.FileDescriptor = opts.TunFD
+			t.AutoRoute = false
+			t.AutoDetectInterface = false
+			t.StrictRoute = false
+			t.Inet4Address = []netip.Prefix{netip.MustParsePrefix(AndroidTunAddress)}
+			t.Inet6Address = []netip.Prefix{netip.MustParsePrefix(AndroidTunAddress6)}
+			// Must match the MTU the OS gave the interface (the app opens it with
+			// Tuning.MTU, default 1500), not mihomo's own default of 9000.
+			t.MTU = AndroidTunMTU
+			if opts.Tuning != nil && opts.Tuning.MTU != 0 {
+				t.MTU = opts.Tuning.MTU
+			}
+			if len(t.DNSHijack) == 0 {
+				t.DNSHijack = []string{"any:53"}
+			}
+		})
 	}
 	if opts.TUNStack != "" {
 		stack, ok := constant.StackTypeMapping[strings.ToLower(opts.TUNStack)]

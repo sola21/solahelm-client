@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vpn_connected">VPN is on</string>
+    <string name="channel_vpn">VPN is running</string>
+    <string name="channel_vpn_quiet">VPN is running (folded)</string>
+    <string name="tile_label">SolaHelm</string>
+    <string name="tile_on">Connected</string>
+    <string name="tile_off">Off</string>
+    <string name="tile_connecting">Connecting…</string>
+    <string name="tile_first_connect">Connect once in the app first</string>
+    <string name="tile_error">SolaHelm: %1$s</string>
+    <string name="action_disconnect">Disconnect</string>
+</resources>

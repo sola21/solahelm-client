@@ -32,6 +32,7 @@ type Result struct {
 	Reason string      `json:"reason"`
 	// For ShareLinks only.
 	Links       []string `json:"links,omitempty"`
+	LinkCount   int      `json:"linkCount,omitempty"`   // len(Links); kept when Links is dropped from replies
 	Protocols   []string `json:"protocols,omitempty"`   // distinct protocols found
 	Unsupported []string `json:"unsupported,omitempty"` // protocols the chosen core cannot run
 }
@@ -206,7 +207,7 @@ func detectLinks(links []string, _ engine.Kind) Result {
 		protocols = append(protocols, p)
 	}
 	sort.Strings(protocols)
-	r := Result{Format: ShareLinks, Core: engine.Mihomo, Links: links, Protocols: protocols,
+	r := Result{Format: ShareLinks, Core: engine.Mihomo, Links: links, LinkCount: len(links), Protocols: protocols,
 		Unsupported: missing(engine.Mihomo, protocols)}
 	r.Reason = "share links are converted to a mihomo config"
 	if len(r.Unsupported) > 0 {

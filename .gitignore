@@ -4,5 +4,9 @@
 *.so
 .idea/
 .vscode/
+app/android/app/libs/
 core/bin/
 dist/
+*.jks
+*.keystore
+key.properties

@@ -421,11 +421,11 @@ abstract class S {
   /// **'{count, plural, one{{count} ссылка} few{{count} ссылки} many{{count} ссылок} other{{count} ссылки}}'**
   String formatLinks(int count);
 
-  /// No description provided for @reasonOnlyIn.
+  /// No description provided for @linksSkipped.
   ///
   /// In ru, this message translates to:
-  /// **'{protocol} есть только в {core}'**
-  String reasonOnlyIn(String protocol, String core);
+  /// **'пропущены: {protocols}'**
+  String linksSkipped(String protocols);
 
   /// No description provided for @reasonByFormat.
   ///
@@ -1698,6 +1698,48 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Клиент скачает архив (через VPN, если он включён), закроется, обновится и запустится снова. Настройки и подписки сохранятся.'**
   String get updateHint;
+
+  /// No description provided for @settingsAndroid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Android'**
+  String get settingsAndroid;
+
+  /// No description provided for @vpnNotification.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомление «VPN работает»'**
+  String get vpnNotification;
+
+  /// No description provided for @vpnNotificationHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Без уведомления Android не даёт VPN работать в фоне. Если выключить, оно сворачивается: без значка в строке состояния, в самом низу шторки.'**
+  String get vpnNotificationHint;
+
+  /// No description provided for @vpnNotificationHide.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать совсем'**
+  String get vpnNotificationHide;
+
+  /// No description provided for @vpnNotificationHideHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откроются настройки Android: выключите там «VPN работает (свёрнуто)». VPN продолжит работать, значок ключа останется — его показывает система.'**
+  String get vpnNotificationHideHint;
+
+  /// No description provided for @quickTile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кнопка в шторке'**
+  String get quickTile;
+
+  /// No description provided for @quickTileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Откройте шторку, нажмите карандаш и перетащите плитку SolaHelm. Она включает последнее подключение и выключает VPN, не открывая приложение.'**
+  String get quickTileHint;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

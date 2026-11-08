@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'core/android_backend.dart';
 import 'core/backend.dart';
 import 'core/daemon_backend.dart';
 import 'core/fake_backend.dart';
@@ -29,14 +31,28 @@ Future<void> main(List<String> args) async {
 
   final CoreBackend backend;
   final SubStore store;
-  if (exe != null && dataDir != null) {
+  if (Platform.isAndroid && dataDir != null && !demo) {
+    backend = AndroidBridge.backend('${dataDir.path}/core');
+    store = FileSubStore(dataDir);
+  } else if (exe != null && dataDir != null) {
     backend = DaemonBackend(executable: exe, workDir: '${dataDir.path}${Platform.pathSeparator}core');
     store = FileSubStore(dataDir);
   } else {
     backend = FakeBackend();
     store = MemorySubStore();
   }
-  final state = AppState(settings, backend, store, isDemo: exe == null);
+  final state = AppState(settings, backend, store, isDemo: exe == null && !(Platform.isAndroid && !demo));
+  AndroidBridge.onRevoked = () => state.disconnect();
+  AndroidBridge.onCoreChanged = () => state.syncWithCore();
+  if (Platform.isAndroid && !demo) {
+    var notify = settings.vpnNotification;
+    unawaited(AndroidBridge.setNotificationVisible(notify).catchError((_) {}));
+    settings.addListener(() {
+      if (settings.vpnNotification == notify) return;
+      notify = settings.vpnNotification;
+      unawaited(AndroidBridge.setNotificationVisible(notify).catchError((_) {}));
+    });
+  }
   if (Platform.isWindows && exe != null) {
     state.updater = Updater(currentVersion: appVersion, portable: isPortable);
   }

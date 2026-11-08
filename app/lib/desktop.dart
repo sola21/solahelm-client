@@ -279,7 +279,7 @@ class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
       MenuItem.submenu(
         label: s.trayModeMenu(_modeText(s, state.mode)),
         submenu: Menu(items: [
-          for (final m in ProxyMode.values)
+          for (final m in AppState.availableModes)
             MenuItem.checkbox(label: _modeText(s, m), checked: m == state.mode, onClick: (_) => state.setMode(m)),
         ]),
       ),

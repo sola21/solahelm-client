@@ -411,13 +411,16 @@ class CoreSettingsPage extends StatelessWidget {
             onChanged: (v) => set(cs.copyWith(logLevel: v ?? '')),
           ),
         ),
-        const Divider(),
-        SwitchListTile(
-          title: Text(s.findProcess),
-          subtitle: Text(s.findProcessHint),
-          value: cs.findProcess,
-          onChanged: (v) => set(cs.copyWith(findProcess: v)),
-        ),
+        // Android names the app behind a connection itself; nothing to switch.
+        if (!Platform.isAndroid) ...[
+          const Divider(),
+          SwitchListTile(
+            title: Text(s.findProcess),
+            subtitle: Text(s.findProcessHint),
+            value: cs.findProcess,
+            onChanged: (v) => set(cs.copyWith(findProcess: v)),
+          ),
+        ],
       ]),
       _Section(s.secDns, [
         SwitchListTile(

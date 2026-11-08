@@ -9,7 +9,25 @@ import 'backend.dart';
 /// Runs solahelm-core (`serve`) as a separate process and talks to it, and to
 /// the core's Clash API, over loopback HTTP.
 class DaemonBackend implements CoreBackend {
-  DaemonBackend({required this.executable, required this.workDir});
+  DaemonBackend({required this.executable, required this.workDir})
+      : inProcess = null,
+        openTun = null,
+        closeTun = null;
+
+  /// Android: the daemon runs inside the app (gomobile) and the TUN comes
+  /// from VpnService through these callbacks.
+  DaemonBackend.inProcess({
+    required this.workDir,
+    required Future<(String addr, String secret)> Function() start,
+    required Future<int> Function(int mtu) this.openTun,
+    required Future<void> Function() this.closeTun,
+  })  : executable = '',
+        inProcess = start;
+
+  final Future<(String, String)> Function()? inProcess;
+  final Future<int> Function(int mtu)? openTun;
+  final Future<void> Function()? closeTun;
+  bool _tunOpen = false;
 
   final String executable;
   final String workDir;
@@ -39,6 +57,13 @@ class DaemonBackend implements CoreBackend {
   Future<void> _ensure() => _starting ??= _launch(elevated: false);
 
   Future<void> _launch({required bool elevated}) async {
+    final ip = inProcess;
+    if (ip != null) {
+      final (addr, secret) = await ip();
+      _base = Uri.parse('http://$addr');
+      _secret = secret;
+      return;
+    }
     final tmp = await Directory.systemTemp.createTemp('solahelm-');
     final secretFile = File('${tmp.path}${Platform.pathSeparator}secret');
     final readyFile = File('${tmp.path}${Platform.pathSeparator}ready');
@@ -115,6 +140,17 @@ class DaemonBackend implements CoreBackend {
 
   @override
   Future<CoreStatus?> attachExisting() async {
+    if (inProcess != null) {
+      // Android: the process (and the core) may outlive the UI behind the VPN service.
+      try {
+        await _ensure();
+        final st = _status(await _call('GET', '/status'));
+        if (st.running) _tunOpen = st.mode == ProxyMode.tun;
+        return st.running ? st : null;
+      } catch (_) {
+        return null;
+      }
+    }
     try {
       if (!await _sessionFile.exists()) return null;
       final m = jsonDecode(await _sessionFile.readAsString()) as Map<String, dynamic>;
@@ -152,6 +188,16 @@ class DaemonBackend implements CoreBackend {
   }
 
   Future<void> _shutdownDaemon() async {
+    if (inProcess != null) {
+      // Android: the daemon lives in the app process; just stop the core.
+      if (_base != null) {
+        try {
+          await _call('POST', '/stop');
+        } catch (_) {}
+      }
+      await _closeTun();
+      return;
+    }
     if (_base != null) {
       try {
         await _call('POST', '/shutdown');
@@ -206,6 +252,8 @@ class DaemonBackend implements CoreBackend {
       format: parseFormat(det?['format'] as String?),
       core: parseCore(det?['core'] as String?),
       protocols: (det?['protocols'] as List?)?.cast<String>() ?? const [],
+      linkCount: (det?['linkCount'] as num?)?.toInt() ?? 0,
+      unsupported: (det?['unsupported'] as List?)?.cast<String>() ?? const [],
       title: (m['title'] as String?)?.trim().isEmpty ?? true ? null : m['title'] as String,
       upload: (m['upload'] as num?)?.toInt() ?? 0,
       download: (m['download'] as num?)?.toInt() ?? 0,
@@ -251,7 +299,15 @@ class DaemonBackend implements CoreBackend {
     String tunStack = 'gvisor',
   }) async {
     await _ensure();
-    final m = await _call('POST', '/start', {
+    int? tunFd;
+    final ot = openTun;
+    if (mode == ProxyMode.tun && ot != null) {
+      tunFd = await ot((tuning?['mtu'] as int?) ?? 1500); // asks for the VPN permission on first use
+      _tunOpen = true;
+    }
+    final Map<String, dynamic> m;
+    try {
+      m = await _call('POST', '/start', {
       'content': content,
       'core': switch (core) {
         CorePref.auto => 'auto',
@@ -265,8 +321,22 @@ class DaemonBackend implements CoreBackend {
       'bypass': ?bypass,
       'findProcess': findProcess,
       'tunStack': tunStack,
+      'tunFd': ?tunFd,
     });
+    } catch (_) {
+      await _closeTun();
+      rethrow;
+    }
     return _status(m);
+  }
+
+  Future<void> _closeTun() async {
+    final ct = closeTun;
+    if (ct == null || !_tunOpen) return;
+    _tunOpen = false;
+    try {
+      await ct();
+    } catch (_) {}
   }
 
   @override
@@ -283,6 +353,9 @@ class DaemonBackend implements CoreBackend {
       core: parseCore(det?['core'] as String?),
       error: m['error'] as String?,
       converted: (m['converted'] as num?)?.toInt() ?? 0,
+      protocols: (det?['protocols'] as List?)?.cast<String>() ?? const [],
+      linkCount: (det?['linkCount'] as num?)?.toInt() ?? 0,
+      unsupported: (det?['unsupported'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -313,8 +386,15 @@ class DaemonBackend implements CoreBackend {
 
   @override
   Future<CoreStatus> stop() async {
-    if (_base == null) return const CoreStatus();
-    return _status(await _call('POST', '/stop'));
+    if (_base == null) {
+      await _closeTun();
+      return const CoreStatus();
+    }
+    try {
+      return _status(await _call('POST', '/stop'));
+    } finally {
+      await _closeTun(); // the core has closed the TUN fd; now drop the VPN service
+    }
   }
 
   Future<Map<String, dynamic>> _clashCall(String method, String path, [Object? body]) {

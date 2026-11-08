@@ -6,6 +6,8 @@ import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'connections.dart';
+import 'logs.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.wide});
@@ -101,9 +103,48 @@ class _NarrowHome extends StatelessWidget {
           const SizedBox(width: 4),
           Text(s.kbps(st.downKbps), style: const TextStyle(fontSize: 13)),
         ]),
+        const SizedBox(height: 16),
+        // The phone's bottom bar has no room for these two; open them as pages.
+        Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(children: [
+            ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: Text(s.navConnections),
+              trailing: st.connections.isEmpty
+                  ? const Icon(Icons.chevron_right)
+                  : Row(mainAxisSize: MainAxisSize.min, children: [
+                      CountBadge(st.connections.length),
+                      const Icon(Icons.chevron_right),
+                    ]),
+              onTap: () => _openPage(context, st, const ConnectionsScreen()),
+            ),
+            Divider(height: 0.5, thickness: 0.5, color: p.hairline),
+            ListTile(
+              leading: const Icon(Icons.article_outlined),
+              title: Text(s.navLogs),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _openPage(context, st, const LogsScreen()),
+            ),
+          ]),
+        ),
       ],
     );
   }
+}
+
+/// A screen from the desktop sidebar as a page of its own (phones).
+void _openPage(BuildContext context, AppState st, Widget screen) {
+  Navigator.of(context).push(MaterialPageRoute<void>(
+    builder: (_) => AppScope(
+      state: st,
+      child: Scaffold(
+        appBar: AppBar(toolbarHeight: 44),
+        body: SafeArea(top: false, child: screen),
+      ),
+    ),
+  ));
 }
 
 class _WideHome extends StatelessWidget {
@@ -168,7 +209,7 @@ class _WideHome extends StatelessWidget {
         SegmentedButton<ProxyMode>(
           showSelectedIcon: false,
           segments: [
-            for (final m in ProxyMode.values) ButtonSegment(value: m, label: Text(_modeText(s, st, m))),
+            for (final m in AppState.availableModes) ButtonSegment(value: m, label: Text(_modeText(s, st, m))),
           ],
           selected: {st.mode},
           onSelectionChanged: busy ? null : (v) => st.setMode(v.first),

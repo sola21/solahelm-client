@@ -81,7 +81,11 @@ class AppState extends ChangeNotifier {
     return subscriptions.isEmpty ? null : subscriptions.first;
   }
 
-  ProxyMode get mode => settings.proxyMode;
+  /// Modes this platform supports: no system proxy on Android.
+  static List<ProxyMode> get availableModes =>
+      Platform.isAndroid ? const [ProxyMode.tun, ProxyMode.portOnly] : ProxyMode.values;
+
+  ProxyMode get mode => availableModes.contains(settings.proxyMode) ? settings.proxyMode : ProxyMode.tun;
 
   /// The core that runs, or would run, the active subscription.
   CoreKind get core {
@@ -186,6 +190,8 @@ class AppState extends ChangeNotifier {
         format: r.format,
         core: r.core,
         protocols: r.protocols,
+        linkCount: r.linkCount,
+        unsupported: r.unsupported,
         upload: r.upload,
         download: r.download,
         total: r.total,
@@ -206,7 +212,15 @@ class AppState extends ChangeNotifier {
         final v = await backend.validate(text);
         if (!v.ok) throw CoreException(v.error ?? 'Unknown format');
         await store.saveContent(id, text);
-        subscriptions[i] = old.copyWith(format: v.format, core: v.core, updatedAt: DateTime.now(), edited: false);
+        subscriptions[i] = old.copyWith(
+          format: v.format,
+          core: v.core,
+          protocols: v.protocols,
+          linkCount: v.linkCount,
+          unsupported: v.unsupported,
+          updatedAt: DateTime.now(),
+          edited: false,
+        );
       } else {
         final r = await backend.fetch(old.url);
         if (r.format == null) throw CoreException(r.error ?? 'Unknown subscription format');
@@ -256,6 +270,9 @@ class AppState extends ChangeNotifier {
         url: url,
         format: v.format,
         core: v.core,
+        protocols: v.protocols,
+        linkCount: v.linkCount,
+        unsupported: v.unsupported,
         updatedAt: DateTime.now(),
         source: source,
       ));
@@ -283,6 +300,9 @@ class AppState extends ChangeNotifier {
     subscriptions[i] = old.copyWith(
       format: v.format,
       core: v.core,
+      protocols: v.protocols,
+      linkCount: v.linkCount,
+      unsupported: v.unsupported,
       edited: old.source == SubSource.remote,
       updatedAt: DateTime.now(),
     );
@@ -383,7 +403,7 @@ class AppState extends ChangeNotifier {
         rulesReplace: sub.rulesReplace,
         tuning: cs.tuning(),
         bypass: cs.proxyBypass,
-        findProcess: cs.findProcess,
+        findProcess: cs.findProcess && !Platform.isAndroid, // Android hides other apps' sockets
         tunStack: cs.manageTun ? cs.tunStack : 'gvisor', // gvisor: no firewall prompt
       );
       appliedRevision = revision;
@@ -430,6 +450,22 @@ class AppState extends ChangeNotifier {
       await _onConnected();
       _notify();
     } catch (_) {}
+  }
+
+  /// The VPN was turned on or off outside the UI (Android tile or
+  /// notification): show what the core is actually doing.
+  Future<void> syncWithCore() async {
+    if (status == LinkStatus.connecting || status == LinkStatus.disconnecting) return;
+    final st = await backend.attachExisting();
+    if (st != null && st.running) {
+      if (status == LinkStatus.connected) return;
+      coreStatus = st;
+      appliedRevision = settings.coreRevision;
+      await _onConnected();
+      _notify();
+    } else if (status == LinkStatus.connected) {
+      await disconnect(); // the core is already stopped; this resets the UI
+    }
   }
 
   /// Exits the app but leaves the core (and the VPN) running.

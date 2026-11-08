@@ -204,8 +204,8 @@ class SEn extends S {
   }
 
   @override
-  String reasonOnlyIn(String protocol, String core) {
-    return '$protocol is only in $core';
+  String linksSkipped(String protocols) {
+    return 'skipped: $protocols';
   }
 
   @override
@@ -917,4 +917,28 @@ class SEn extends S {
   @override
   String get updateHint =>
       'The client downloads the archive (through the VPN if it\'s on), closes, updates and starts again. Settings and subscriptions stay.';
+
+  @override
+  String get settingsAndroid => 'Android';
+
+  @override
+  String get vpnNotification => '“VPN is running” notification';
+
+  @override
+  String get vpnNotificationHint =>
+      'Android doesn\'t let a VPN run in the background without a notification. When off, it\'s folded: no status-bar icon, at the very bottom of the shade.';
+
+  @override
+  String get vpnNotificationHide => 'Remove completely';
+
+  @override
+  String get vpnNotificationHideHint =>
+      'Opens Android settings: turn off “VPN is running (folded)” there. The VPN keeps working; the key icon stays — the system shows it.';
+
+  @override
+  String get quickTile => 'Quick settings tile';
+
+  @override
+  String get quickTileHint =>
+      'Open the shade, tap the pencil and drag the SolaHelm tile in. It turns the last connection on and the VPN off without opening the app.';
 }

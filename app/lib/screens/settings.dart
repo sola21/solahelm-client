@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
 import '../l10n/app_localizations.dart';
+import '../core/android_backend.dart';
 import '../desktop.dart';
 import '../models.dart';
 import '../state/scope.dart';
@@ -10,7 +13,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.1.0';
+const appVersion = '0.2.0';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 
@@ -116,6 +119,36 @@ class SettingsScreen extends StatelessWidget {
                     : null,
                 value: settings.autoConnect,
                 onChanged: settings.setAutoConnect,
+              ),
+            ]),
+          ),
+        ],
+        if (Platform.isAndroid) ...[
+          label(s.settingsAndroid),
+          Card(
+            child: Column(children: [
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_outlined),
+                title: Text(s.vpnNotification),
+                subtitle: Text(s.vpnNotificationHint, style: TextStyle(fontSize: 12, color: p.muted)),
+                value: settings.vpnNotification,
+                onChanged: settings.setVpnNotification,
+              ),
+              if (!settings.vpnNotification) ...[
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.notifications_off_outlined),
+                  title: Text(s.vpnNotificationHide),
+                  subtitle: Text(s.vpnNotificationHideHint, style: TextStyle(fontSize: 12, color: p.muted)),
+                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  onTap: () => AndroidBridge.openNotificationSettings().catchError((_) {}),
+                ),
+              ],
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.toggle_on_outlined),
+                title: Text(s.quickTile),
+                subtitle: Text(s.quickTileHint, style: TextStyle(fontSize: 12, color: p.muted)),
               ),
             ]),
           ),

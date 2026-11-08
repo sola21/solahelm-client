@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome app mark (two chevrons) for the status bar and the quick-settings tile. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.55"
+        android:pathData="M8,10 L34,10 L64,50 L34,90 L8,90 L38,50 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M40,10 L66,10 L96,50 L66,90 L40,90 L70,50 Z" />
+</vector>

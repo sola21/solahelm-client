@@ -84,6 +84,8 @@ type StartRequest struct {
 	Bypass []string `json:"bypass"`
 	// FindProcess: look up the process of each connection (default on).
 	FindProcess *bool `json:"findProcess"`
+	// TunFD: a TUN device from the OS (Android VpnService) for Mode tun.
+	TunFD int `json:"tunFd"`
 }
 
 // FetchResult is a downloaded subscription.
@@ -104,6 +106,9 @@ type Server struct {
 	Secret   string
 	WorkDir  string
 	Versions map[string]string
+	// OnStarted, when set, gets every request that started a core (Android
+	// keeps it so the quick-settings tile can start the same thing again).
+	OnStarted func(StartRequest)
 
 	mu      sync.Mutex
 	mgr     engine.Manager
@@ -112,6 +117,7 @@ type Server struct {
 	quit    chan struct{}
 	once    sync.Once
 	parent  atomic.Int64 // pid of the UI we follow; 0 = none (detached)
+	running atomic.Bool  // mirrors status.Running without taking mu
 }
 
 func New(secret, workDir string, versions map[string]string) *Server {
@@ -248,7 +254,7 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 	if req.Mode == "" {
 		req.Mode = ModePort
 	}
-	if req.Mode == ModeTUN && !isElevated() {
+	if req.Mode == ModeTUN && req.TunFD == 0 && !isElevated() {
 		return fail(ErrNeedsElevation)
 	}
 	body := []byte(req.Content)
@@ -294,6 +300,7 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 		LoopbackOnly: req.Tuning == nil || !req.Tuning.AllowLAN,
 		FindProcess:  req.FindProcess == nil || *req.FindProcess,
 		Tuning:       req.Tuning,
+		TunFD:        req.TunFD,
 		Rules:        req.Rules,
 		TUNStack:     stack,
 		MixedPort:    port,
@@ -313,8 +320,16 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 		Running: true, Core: kind, Mode: req.Mode, Port: port,
 		Controller: controller, ControllerSecret: apiSecret, StartedAt: &now, Detect: &det,
 	}
+	s.running.Store(true)
+	if s.OnStarted != nil {
+		s.OnStarted(req)
+	}
 	return s.statusLocked(), nil
 }
+
+// Running reports whether a core runs; unlike Status it never waits for a
+// start or stop in progress.
+func (s *Server) Running() bool { return s.running.Load() }
 
 // Stop stops the core (if any) and restores the system proxy.
 func (s *Server) Stop() Status {
@@ -326,6 +341,7 @@ func (s *Server) Stop() Status {
 }
 
 func (s *Server) stopLocked() {
+	s.running.Store(false)
 	if s.status.Mode == ModeSystemProxy {
 		_ = s.sysprox.Disable()
 	}

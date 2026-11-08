@@ -193,6 +193,7 @@ class Settings extends ChangeNotifier {
     this.startMinimized = false,
     this.autoConnect = false,
     this.checkUpdates = true,
+    this.vpnNotification = true,
     this.file,
   });
 
@@ -205,6 +206,7 @@ class Settings extends ChangeNotifier {
   bool startMinimized; // start hidden in the tray
   bool autoConnect; // connect right after start
   bool checkUpdates; // look for a new release on start
+  bool vpnNotification; // Android: a normal "VPN is running" notification (false: folded)
   /// Global hotkey that toggles the VPN, as hotkey_manager JSON; null = none.
   Map<String, dynamic>? toggleHotkey;
   CoreSettings core = const CoreSettings();
@@ -237,6 +239,7 @@ class Settings extends ChangeNotifier {
         s.startMinimized = m['startMinimized'] as bool? ?? false;
         s.autoConnect = m['autoConnect'] as bool? ?? false;
         s.checkUpdates = m['checkUpdates'] as bool? ?? true;
+        s.vpnNotification = m['vpnNotification'] as bool? ?? true;
         s.core = CoreSettings.fromJson(m['coreSettings']);
         final hk = m['toggleHotkey'];
         s.toggleHotkey = hk is Map ? hk.cast<String, dynamic>() : null;
@@ -262,6 +265,7 @@ class Settings extends ChangeNotifier {
         'startMinimized': startMinimized,
         'autoConnect': autoConnect,
         'checkUpdates': checkUpdates,
+        'vpnNotification': vpnNotification,
         'coreSettings': core.toJson(),
         'toggleHotkey': toggleHotkey,
       }));
@@ -333,6 +337,12 @@ class Settings extends ChangeNotifier {
 
   void setCheckUpdates(bool v) {
     checkUpdates = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setVpnNotification(bool v) {
+    vpnNotification = v;
     notifyListeners();
     _save();
   }

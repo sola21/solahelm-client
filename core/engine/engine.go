@@ -12,6 +12,15 @@ import (
 	"sync"
 )
 
+// AndroidTunAddress is the TUN address the Android VpnService sets up; the
+// core must use the same one.
+const (
+	AndroidTunAddress  = "172.19.0.1/30"
+	AndroidTunAddress6 = "fdfe:dcba:9876::1/126"
+	// AndroidTunMTU is the interface MTU when Tuning.MTU is not set (the app uses the same default).
+	AndroidTunMTU uint32 = 1500
+)
+
 // Kind names a proxy core.
 type Kind string
 
@@ -49,6 +58,9 @@ type Options struct {
 	Rules *Rules
 	// Tuning overrides profile settings from the app's settings.
 	Tuning *Tuning
+	// TunFD is a TUN device opened by the OS (Android VpnService). The OS
+	// owns routes and addresses; the core only reads and writes packets.
+	TunFD int
 	// MixedPort, when non-zero, is the local HTTP+SOCKS port. It replaces the
 	// config's own mixed port (or adds one) so the client can avoid busy ports.
 	MixedPort int

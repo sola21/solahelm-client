@@ -54,7 +54,14 @@
   "formatSingBox": "sing-box JSON",
   "formatClash": "Clash YAML",
   "formatLinks": "{count, plural, one{{count} link} other{{count} links}}",
-  "reasonOnlyIn": "{protocol} is only in {core}",
+  "linksSkipped": "skipped: {protocols}",
+  "@linksSkipped": {
+    "placeholders": {
+      "protocols": {
+        "type": "String"
+      }
+    }
+  },
   "reasonByFormat": "core picked by format",
   "rulesTemplate": "“{name}” rules",
   "settingsTheme": "Theme",
@@ -266,5 +273,12 @@
   "updateAvailable": "Version {v} is available",
   "updateTo": "Update to {v}",
   "updateDownloading": "Downloading the update… {p}%",
-  "updateHint": "The client downloads the archive (through the VPN if it's on), closes, updates and starts again. Settings and subscriptions stay."
+  "updateHint": "The client downloads the archive (through the VPN if it's on), closes, updates and starts again. Settings and subscriptions stay.",
+  "settingsAndroid": "Android",
+  "vpnNotification": "“VPN is running” notification",
+  "vpnNotificationHint": "Android doesn't let a VPN run in the background without a notification. When off, it's folded: no status-bar icon, at the very bottom of the shade.",
+  "vpnNotificationHide": "Remove completely",
+  "vpnNotificationHideHint": "Opens Android settings: turn off “VPN is running (folded)” there. The VPN keeps working; the key icon stays — the system shows it.",
+  "quickTile": "Quick settings tile",
+  "quickTileHint": "Open the shade, tap the pencil and drag the SolaHelm tile in. It turns the last connection on and the VPN off without opening the app."
 }
