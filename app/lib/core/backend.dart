@@ -89,14 +89,16 @@ abstract class CoreBackend {
     List<String>? bypass,
     bool findProcess = true,
     String tunStack = 'gvisor',
+    String routing = '',
   });
   Future<CoreStatus> stop();
 
   /// Checks a config (with optional user rules) without starting it.
-  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false});
+  /// [routing]: the template for subscriptions made of links (see CoreSettings.linkRouting).
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false, String routing = ''});
 
   /// Rules and possible targets of a profile, for the rules editor.
-  Future<ProfileRulesInfo> profileRules(String content);
+  Future<ProfileRulesInfo> profileRules(String content, {String routing = ''});
 
   /// Rules of the running core (Clash API /rules).
   Future<List<ProfileRule>> activeRules();

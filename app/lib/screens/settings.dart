@@ -14,7 +14,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.2.2';
+const appVersion = '0.2.3';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 const repoUrl = 'https://github.com/sola21/solahelm-client';
@@ -66,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
           showSelectedIcon: false,
           segments: [
             ButtonSegment(value: '', label: Text(s.languageSystem)),
-            const ButtonSegment(value: 'ru', label: Text('Р СѓСЃСЃРєРёР№')),
+            const ButtonSegment(value: 'ru', label: Text('Русский')),
             const ButtonSegment(value: 'en', label: Text('English')),
           ],
           selected: {settings.languageCode ?? ''},
@@ -87,6 +87,18 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Text(s.coreHint, style: TextStyle(fontSize: 12, color: p.muted, height: 1.4)),
         ],
+        label(s.settingsRouting),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: CoreSettings.routingRuDirect, label: Text(s.routingRuDirect)),
+            ButtonSegment(value: CoreSettings.routingAll, label: Text(s.routingAll)),
+          ],
+          selected: {settings.core.linkRouting},
+          onSelectionChanged: (v) => settings.setCore(settings.core.copyWith(linkRouting: v.first)),
+        ),
+        const SizedBox(height: 8),
+        Text(s.routingHint, style: TextStyle(fontSize: 12, color: p.muted, height: 1.4)),
         label(s.settingsExit),
         Card(
           child: SwitchListTile(
@@ -204,7 +216,7 @@ class SettingsScreen extends StatelessWidget {
           const _UpdatesCard(),
         ],
         label(s.settingsAbout),
-        Text('SolaHelm Client $appVersion${isPortable ? ' В· portable' : ''}', style: const TextStyle(fontSize: 14)),
+        Text('SolaHelm Client $appVersion${isPortable ? ' · portable' : ''}', style: const TextStyle(fontSize: 14)),
         const SizedBox(height: 2),
         Text(s.coreVersions(singBoxVersion, mihomoVersion), style: TextStyle(fontSize: 12, color: p.muted)),
         const SizedBox(height: 8),

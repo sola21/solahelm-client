@@ -92,6 +92,10 @@ are the same.
 A list of links becomes a complete mihomo config (`core/convert`; the link parser is mihomo's own):
 groups `Proxy` (manual) and `Auto` (by latency), DNS through the tunnel, TUN, local networks direct.
 Links mihomo can't run (Naive, MASQUE) are skipped — the subscription card says so.
+A list of links has no rules of its own, so the client adds a routing template (Settings → Routing):
+**Russia direct** (the default, like the panel's template: Russian sites and apps, torrents and the local
+network bypass the VPN, blocked sites and everything else go through it; the legiz-ru and MetaCubeX rule
+sets are downloaded through the VPN itself and cached) or **Everything via VPN**.
 
 ### Windows
 

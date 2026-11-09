@@ -1836,6 +1836,30 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Скрыть IP'**
   String get hideIp;
+
+  /// No description provided for @settingsRouting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрутизация'**
+  String get settingsRouting;
+
+  /// No description provided for @routingRuDirect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Россия напрямую'**
+  String get routingRuDirect;
+
+  /// No description provided for @routingAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Всё через VPN'**
+  String get routingAll;
+
+  /// No description provided for @routingHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для подписок-ссылок (универсальных): в них нет своих правил. «Россия напрямую» — российские сайты и приложения, торренты и локальная сеть идут мимо VPN, заблокированное и остальное — через VPN (наборы правил legiz-ru и MetaCubeX, как в шаблоне панели). Профили Clash и sing-box используют свои правила.'**
+  String get routingHint;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

@@ -63,7 +63,12 @@ class CoreSettings {
     this.dnsOverride = false,
     this.dnsRemote = defaultDnsRemote,
     this.dnsDirect = defaultDnsDirect,
+    this.linkRouting = routingRuDirect,
   });
+
+  /// Routing templates for subscriptions made of links (they carry no rules).
+  static const routingAll = 'all';
+  static const routingRuDirect = 'ru-direct';
 
   static const defaultDnsRemote = ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'];
   static const defaultDnsDirect = ['77.88.8.8', '1.1.1.1'];
@@ -90,6 +95,7 @@ class CoreSettings {
   final bool dnsOverride; // replace a mihomo profile's DNS
   final List<String> dnsRemote; // through the tunnel (respect-rules)
   final List<String> dnsDirect; // for proxy servers and direct traffic
+  final String linkRouting; // routingAll or routingRuDirect
 
   CoreSettings copyWith({
     bool? manageTun,
@@ -106,6 +112,7 @@ class CoreSettings {
     bool? dnsOverride,
     List<String>? dnsRemote,
     List<String>? dnsDirect,
+    String? linkRouting,
   }) =>
       CoreSettings(
         manageTun: manageTun ?? this.manageTun,
@@ -122,6 +129,7 @@ class CoreSettings {
         dnsOverride: dnsOverride ?? this.dnsOverride,
         dnsRemote: dnsRemote ?? this.dnsRemote,
         dnsDirect: dnsDirect ?? this.dnsDirect,
+        linkRouting: linkRouting ?? this.linkRouting,
       );
 
   /// What the core gets as "tuning".
@@ -153,6 +161,7 @@ class CoreSettings {
         'dnsOverride': dnsOverride,
         'dnsRemote': dnsRemote,
         'dnsDirect': dnsDirect,
+        'linkRouting': linkRouting,
       };
 
   static CoreSettings fromJson(Object? v) {
@@ -177,6 +186,7 @@ class CoreSettings {
       dnsOverride: v['dnsOverride'] as bool? ?? d.dnsOverride,
       dnsRemote: list(v['dnsRemote']) ?? d.dnsRemote,
       dnsDirect: list(v['dnsDirect']) ?? d.dnsDirect,
+      linkRouting: const [routingAll, routingRuDirect].contains(v['linkRouting']) ? v['linkRouting'] as String : d.linkRouting,
     );
   }
 }

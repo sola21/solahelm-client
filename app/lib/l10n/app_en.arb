@@ -296,5 +296,9 @@
   "exitUnknown": "Couldn't get the IP",
   "exitUnknownPlace": "Unknown country",
   "showIp": "Show the whole IP",
-  "hideIp": "Hide the IP"
+  "hideIp": "Hide the IP",
+  "settingsRouting": "Routing",
+  "routingRuDirect": "Russia direct",
+  "routingAll": "Everything via VPN",
+  "routingHint": "For link subscriptions (universal ones): they carry no rules. “Russia direct” sends Russian sites and apps, torrents and the local network around the VPN, and blocked sites and everything else through it (legiz-ru and MetaCubeX rule sets, like the panel's template). Clash and sing-box profiles keep their own rules."
 }

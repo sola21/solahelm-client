@@ -297,6 +297,7 @@ class DaemonBackend implements CoreBackend {
     List<String>? bypass,
     bool findProcess = true,
     String tunStack = 'gvisor',
+    String routing = '',
   }) async {
     await _ensure();
     int? tunFd;
@@ -322,6 +323,7 @@ class DaemonBackend implements CoreBackend {
       'findProcess': findProcess,
       'tunStack': tunStack,
       'tunFd': ?tunFd,
+      if (routing.isNotEmpty) 'routing': routing,
     });
     } catch (_) {
       await _closeTun();
@@ -340,10 +342,11 @@ class DaemonBackend implements CoreBackend {
   }
 
   @override
-  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false}) async {
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false, String routing = ''}) async {
     await _ensure();
     final m = await _call('POST', '/validate', {
       'content': content,
+      if (routing.isNotEmpty) 'routing': routing,
       if (rules != null) 'rules': {'lines': rules, 'replace': rulesReplace},
     });
     final det = m['detect'] as Map<String, dynamic>?;
@@ -360,9 +363,9 @@ class DaemonBackend implements CoreBackend {
   }
 
   @override
-  Future<ProfileRulesInfo> profileRules(String content) async {
+  Future<ProfileRulesInfo> profileRules(String content, {String routing = ''}) async {
     await _ensure();
-    final m = await _call('POST', '/profile-rules', {'content': content});
+    final m = await _call('POST', '/profile-rules', {'content': content, if (routing.isNotEmpty) 'routing': routing});
     List<String> list(String k) => (m[k] as List?)?.map((e) => e.toString()).toList() ?? const [];
     return ProfileRulesInfo(
       core: parseCore(m['core'] as String?),

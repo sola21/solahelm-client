@@ -86,6 +86,8 @@ type StartRequest struct {
 	FindProcess *bool `json:"findProcess"`
 	// TunFD: a TUN device from the OS (Android VpnService) for Mode tun.
 	TunFD int `json:"tunFd"`
+	// Routing: the template for configs made from links, see convert.Routings.
+	Routing string `json:"routing"`
 }
 
 // FetchResult is a downloaded subscription.
@@ -147,22 +149,24 @@ func (s *Server) Handler() http.Handler {
 		var req struct {
 			Content string        `json:"content"`
 			Rules   *engine.Rules `json:"rules"`
+			Routing string        `json:"routing"`
 		}
 		if err := decode(r, &req); err != nil {
 			s.reply(w, nil, err)
 			return
 		}
-		s.reply(w, Validate([]byte(req.Content), req.Rules), nil)
+		s.reply(w, Validate([]byte(req.Content), req.Rules, req.Routing), nil)
 	})
 	mux.HandleFunc("POST /profile-rules", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Content string `json:"content"`
+			Routing string `json:"routing"`
 		}
 		if err := decode(r, &req); err != nil {
 			s.reply(w, nil, err)
 			return
 		}
-		res, err := ProfileRules([]byte(req.Content))
+		res, err := ProfileRules([]byte(req.Content), req.Routing)
 		s.reply(w, res, err)
 	})
 	mux.HandleFunc("POST /detect", func(w http.ResponseWriter, r *http.Request) {
@@ -265,7 +269,7 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 	kind := det.Core
 	if det.Format == detect.ShareLinks {
 		// Links become a full mihomo config; a pinned core can't change that.
-		conv, err := convert.LinksToMihomo(body)
+		conv, err := convert.LinksToMihomo(body, req.Routing)
 		if err != nil {
 			return fail(err)
 		}
@@ -528,7 +532,7 @@ type ValidateResult struct {
 
 // Validate detects a body and parses it with its core (links are converted
 // first), without starting anything.
-func Validate(body []byte, rules *engine.Rules) ValidateResult {
+func Validate(body []byte, rules *engine.Rules, routing string) ValidateResult {
 	det, err := detect.Detect(body, "")
 	if err != nil {
 		return ValidateResult{Error: err.Error()}
@@ -536,7 +540,7 @@ func Validate(body []byte, rules *engine.Rules) ValidateResult {
 	det.Links = nil
 	res := ValidateResult{Detect: &det}
 	if det.Format == detect.ShareLinks {
-		conv, err := convert.LinksToMihomo(body)
+		conv, err := convert.LinksToMihomo(body, routing)
 		if err != nil {
 			res.Error = err.Error()
 			return res
@@ -572,13 +576,13 @@ var mihomoRuleTypes = []string{
 }
 
 // ProfileRules returns what the rules editor needs for a profile body.
-func ProfileRules(body []byte) (*ProfileRulesResult, error) {
+func ProfileRules(body []byte, routing string) (*ProfileRulesResult, error) {
 	det, err := detect.Detect(body, "")
 	if err != nil {
 		return nil, err
 	}
 	if det.Format == detect.ShareLinks {
-		conv, err := convert.LinksToMihomo(body)
+		conv, err := convert.LinksToMihomo(body, routing)
 		if err != nil {
 			return nil, err
 		}

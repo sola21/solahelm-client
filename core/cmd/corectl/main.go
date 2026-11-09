@@ -67,6 +67,7 @@ flags for run/test:
   -loopback                    listen on 127.0.0.1 only but keep TUN
   -tun-stack gvisor|system|mixed
   -port N                      local mixed (HTTP+SOCKS) port
+  -routing all|ru-direct       links only: everything via VPN, or Russian sites direct
   -duration 40s                (run) stop automatically`)
 	os.Exit(2)
 }
@@ -94,6 +95,7 @@ type runFlags struct {
 	port                                      *int
 	tunStack                                  *string
 	dnsRemote, dnsDirect                      *string
+	routing                                   *string
 }
 
 func addRunFlags(fs *flag.FlagSet, proxyOnlyDefault bool, controllerDefault string, portDefault int) runFlags {
@@ -109,6 +111,7 @@ func addRunFlags(fs *flag.FlagSet, proxyOnlyDefault bool, controllerDefault stri
 		tunStack:   fs.String("tun-stack", "", "override TUN stack: gvisor, system or mixed"),
 		dnsRemote:  fs.String("dns-remote", "", "mihomo: replace DNS, comma list of remote resolvers (needs -dns-direct)"),
 		dnsDirect:  fs.String("dns-direct", "", "mihomo: plain resolvers for proxy servers and direct traffic"),
+		routing:    fs.String("routing", "all", "links only: routing template, all or ru-direct"),
 	}
 }
 
@@ -122,7 +125,7 @@ func start(m *engine.Manager, f runFlags, src string) engine.Kind {
 			fatal(err)
 		}
 		if r.Format == detect.ShareLinks {
-			conv, err := convert.LinksToMihomo(body)
+			conv, err := convert.LinksToMihomo(body, *f.routing)
 			if err != nil {
 				fatal(err)
 			}

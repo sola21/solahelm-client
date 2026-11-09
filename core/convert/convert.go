@@ -33,8 +33,9 @@ type Result struct {
 // ErrNoProxies means nothing usable was found.
 var ErrNoProxies = errors.New("no supported links in the subscription")
 
-// LinksToMihomo converts share links (plain or base64) to a mihomo YAML config.
-func LinksToMihomo(body []byte) (*Result, error) {
+// LinksToMihomo converts share links (plain or base64) to a mihomo YAML config
+// with the [routing] template ("" = RoutingAll).
+func LinksToMihomo(body []byte, routing string) (*Result, error) {
 	proxies, err := mconv.ConvertsV2Ray(body)
 	if err != nil && len(proxies) == 0 {
 		return nil, err
@@ -92,17 +93,9 @@ func LinksToMihomo(body []byte) (*Result, error) {
 				"url": "https://www.gstatic.com/generate_204", "interval": 300, "tolerance": 50,
 			},
 		},
-		"rules": []string{
-			"IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
-			"IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
-			"IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
-			"IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
-			"IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
-			"IP-CIDR,224.0.0.0/4,DIRECT,no-resolve",
-			"DOMAIN-SUFFIX,local,DIRECT",
-			"DOMAIN-SUFFIX,lan,DIRECT",
-			"MATCH," + GroupProxy,
-		},
+	}
+	if err := applyRouting(cfg, routing); err != nil {
+		return nil, err
 	}
 	// yaml.v3 sorts map keys; that's fine for mihomo.
 	out, err := yaml.Marshal(cfg)

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -127,23 +128,31 @@ func TestDaemonFlow(t *testing.T) {
 func TestValidateAndProfileRules(t *testing.T) {
 	links := "hysteria2://pass@vps1.example.org:443?sni=vps1.example.org#DE-hy2\n" +
 		"trojan://pass@vps1.example.org:7443?sni=vps1.example.org#DE-trojan\n"
-	v := Validate([]byte(links), nil)
+	v := Validate([]byte(links), nil, "")
 	if !v.OK || v.Converted != 2 || v.Detect.Core != "mihomo" {
 		t.Fatalf("links: %+v", v)
 	}
-	pr, err := ProfileRules([]byte(links))
+	pr, err := ProfileRules([]byte(links), "")
 	if err != nil || !pr.Replace || len(pr.Rules) == 0 || len(pr.Targets) < 4 {
 		t.Fatalf("profile rules for links: %+v %v", pr, err)
 	}
-	bad := Validate([]byte(links), &engine.Rules{Lines: []string{"DOMAIN,x.com,NoSuchGroup"}})
+	bad := Validate([]byte(links), &engine.Rules{Lines: []string{"DOMAIN,x.com,NoSuchGroup"}}, "")
 	if bad.OK {
 		t.Fatal("rule to a missing group accepted")
 	}
-	good := Validate([]byte(links), &engine.Rules{Lines: []string{"PROCESS-NAME,Telegram.exe,Proxy", "MATCH,DIRECT"}, Replace: true})
+	good := Validate([]byte(links), &engine.Rules{Lines: []string{"PROCESS-NAME,Telegram.exe,Proxy", "MATCH,DIRECT"}, Replace: true}, "")
 	if !good.OK {
 		t.Fatalf("good rules rejected: %s", good.Error)
 	}
-	if v := Validate([]byte("not a config"), nil); v.OK || v.Error == "" {
+	// The "Russia direct" template: mihomo accepts it, and the rules screen sees its rule sets.
+	if v := Validate([]byte(links), nil, "ru-direct"); !v.OK {
+		t.Fatalf("ru-direct rejected: %s", v.Error)
+	}
+	ru, err := ProfileRules([]byte(links), "ru-direct")
+	if err != nil || len(ru.Rules) <= len(pr.Rules) || !strings.Contains(strings.Join(ru.Rules, "\n"), "RULE-SET,geosite-ru,DIRECT") {
+		t.Fatalf("ru-direct profile rules: %+v %v", ru, err)
+	}
+	if v := Validate([]byte("not a config"), nil, ""); v.OK || v.Error == "" {
 		t.Fatalf("garbage accepted: %+v", v)
 	}
 }

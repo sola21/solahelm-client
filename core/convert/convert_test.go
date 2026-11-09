@@ -21,7 +21,7 @@ func TestLinksToMihomo(t *testing.T) {
 		"base64": base64.StdEncoding.EncodeToString([]byte(links)),
 	} {
 		t.Run(name, func(t *testing.T) {
-			r, err := LinksToMihomo([]byte(body))
+			r, err := LinksToMihomo([]byte(body), "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -50,7 +50,69 @@ func TestLinksToMihomo(t *testing.T) {
 }
 
 func TestNothingUsable(t *testing.T) {
-	if _, err := LinksToMihomo([]byte("naive+https://u:p@x:1#a\n")); err == nil {
+	if _, err := LinksToMihomo([]byte("naive+https://u:p@x:1#a\n"), ""); err == nil {
 		t.Fatal("expected an error")
+	}
+}
+
+func TestRoutingTemplates(t *testing.T) {
+	load := func(routing string) map[string]any {
+		t.Helper()
+		r, err := LinksToMihomo([]byte(links), routing)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var cfg map[string]any
+		if err := yaml.Unmarshal(r.YAML, &cfg); err != nil {
+			t.Fatal(err)
+		}
+		return cfg
+	}
+	rules := func(cfg map[string]any) []string {
+		var out []string
+		for _, r := range cfg["rules"].([]any) {
+			out = append(out, r.(string))
+		}
+		return out
+	}
+
+	all := load(RoutingAll)
+	if all["rule-providers"] != nil {
+		t.Fatal("the all-VPN template has no rule sets")
+	}
+	if r := rules(all); r[len(r)-1] != "MATCH,"+GroupProxy || len(r) != len(localRules)+1 {
+		t.Fatalf("all: %v", r)
+	}
+	if strings.Join(rules(load("")), "|") != strings.Join(rules(all), "|") {
+		t.Fatal(`"" must be the all-VPN template`)
+	}
+
+	ru := load(RoutingRuDirect)
+	providers := ru["rule-providers"].(map[string]any)
+	if len(providers) != len(ruDirectSets) {
+		t.Fatalf("providers: %d", len(providers))
+	}
+	for name, p := range providers {
+		pm := p.(map[string]any)
+		if pm["proxy"] != GroupProxy || !strings.HasPrefix(pm["url"].(string), "https://github.com/") {
+			t.Fatalf("%s: %v", name, pm)
+		}
+	}
+	r := rules(ru)
+	if r[0] != "RULE-SET,ru-inline-banned,"+GroupProxy || r[len(r)-1] != "MATCH,"+GroupProxy {
+		t.Fatalf("ru-direct order: %v", r)
+	}
+	// Every RULE-SET points at a defined provider.
+	for _, line := range r {
+		if f := strings.Split(line, ","); f[0] == "RULE-SET" && providers[f[1]] == nil {
+			t.Fatalf("undefined rule set in %q", line)
+		}
+	}
+	if ru["dns"].(map[string]any)["direct-nameserver"] == nil {
+		t.Fatal("ru-direct resolves direct traffic with a local resolver")
+	}
+
+	if _, err := LinksToMihomo([]byte(links), "bogus"); err == nil {
+		t.Fatal("unknown template accepted")
 	}
 }

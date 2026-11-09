@@ -386,7 +386,7 @@ class AppState extends ChangeNotifier {
   Future<ProfileRulesInfo> profileRules(String id) async {
     final text = await store.content(id);
     if (text == null) throw CoreException('The subscription has not been downloaded');
-    return backend.profileRules(text);
+    return backend.profileRules(text, routing: settings.core.linkRouting);
   }
 
   /// Saves user rules for a profile after the core accepts them.
@@ -397,7 +397,7 @@ class AppState extends ChangeNotifier {
     final text = await store.content(id);
     if (text == null) return 'The subscription has not been downloaded';
     if (lines != null) {
-      final v = await backend.validate(text, rules: lines, rulesReplace: replace);
+      final v = await backend.validate(text, rules: lines, rulesReplace: replace, routing: settings.core.linkRouting);
       if (!v.ok) return v.error ?? 'invalid rules';
     }
     subscriptions[i] = subscriptions[i].copyWith(rules: () => lines, rulesReplace: replace);
@@ -467,6 +467,7 @@ class AppState extends ChangeNotifier {
         bypass: cs.proxyBypass,
         findProcess: cs.findProcess && !Platform.isAndroid, // Android hides other apps' sockets
         tunStack: cs.manageTun ? cs.tunStack : 'gvisor', // gvisor: no firewall prompt
+        routing: cs.linkRouting,
       );
       appliedRevision = revision;
       await _onConnected();

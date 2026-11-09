@@ -347,6 +347,8 @@ void main() {
 
     await t.tap(find.text('Settings').first);
     await t.pumpAndSettle();
+    await t.scrollUntilVisible(find.text('TUN stack and routes, system proxy exceptions, ports, LAN access'), 200,
+        scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first);
     await t.tap(find.text('Connection and TUN').last);
     await t.pumpAndSettle();
     await t.tap(find.text('Manage TUN settings'));
@@ -404,6 +406,8 @@ void main() {
     await pumpApp(t, st, const Size(1200, 900));
     await t.tap(find.text('Настройки'));
     await t.pumpAndSettle();
+    // Regression: 0.2.2 shipped "Р СѓСЃСЃРєРёР№" here after a version bump re-encoded the file.
+    expect(find.text('Русский'), findsOneWidget);
 
     await t.tap(find.text('English'));
     await t.pumpAndSettle();
@@ -571,6 +575,28 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Netherlands, Amsterdam'), findsOneWidget);
     expect(find.text('203.0.*.*'), findsOneWidget);
+    await finish(t, st);
+  });
+
+  testWidgets('link routing template: Russia direct by default, switch to all-VPN offers a reconnect', (t) async {
+    final st = newState();
+    await pumpApp(t, st, const Size(1200, 900));
+    await t.tap(find.text('Подписки'));
+    await t.pumpAndSettle();
+    await addSub(t, 'https://panel.example.org/sub/abc/clash');
+    await t.runAsync(st.connect);
+    await t.pumpAndSettle();
+    expect((st.backend as FakeBackend).lastRouting, 'ru-direct');
+
+    await t.tap(find.text('Настройки'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Всё через VPN'));
+    await t.pumpAndSettle();
+    expect(st.settings.core.linkRouting, 'all');
+    expect(st.needsReapply, isTrue);
+    await t.runAsync(st.reconnect);
+    await t.pumpAndSettle();
+    expect((st.backend as FakeBackend).lastRouting, 'all');
     await finish(t, st);
   });
 }

@@ -993,4 +993,17 @@ class SEn extends S {
 
   @override
   String get hideIp => 'Hide the IP';
+
+  @override
+  String get settingsRouting => 'Routing';
+
+  @override
+  String get routingRuDirect => 'Russia direct';
+
+  @override
+  String get routingAll => 'Everything via VPN';
+
+  @override
+  String get routingHint =>
+      'For link subscriptions (universal ones): they carry no rules. “Russia direct” sends Russian sites and apps, torrents and the local network around the VPN, and blocked sites and everything else through it (legiz-ru and MetaCubeX rule sets, like the panel\'s template). Clash and sing-box profiles keep their own rules.';
 }

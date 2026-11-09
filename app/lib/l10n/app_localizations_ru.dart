@@ -994,4 +994,17 @@ class SRu extends S {
 
   @override
   String get hideIp => 'Скрыть IP';
+
+  @override
+  String get settingsRouting => 'Маршрутизация';
+
+  @override
+  String get routingRuDirect => 'Россия напрямую';
+
+  @override
+  String get routingAll => 'Всё через VPN';
+
+  @override
+  String get routingHint =>
+      'Для подписок-ссылок (универсальных): в них нет своих правил. «Россия напрямую» — российские сайты и приложения, торренты и локальная сеть идут мимо VPN, заблокированное и остальное — через VPN (наборы правил legiz-ru и MetaCubeX, как в шаблоне панели). Профили Clash и sing-box используют свои правила.';
 }

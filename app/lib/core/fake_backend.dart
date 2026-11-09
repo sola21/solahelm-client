@@ -57,9 +57,11 @@ class FakeBackend implements CoreBackend {
     List<String>? bypass,
     bool findProcess = true,
     String tunStack = 'gvisor',
+    String routing = '',
   }) async {
     lastRules = rules;
     lastTuning = tuning;
+    lastRouting = routing;
     lastPort = port;
     if (mode == ProxyMode.tun && requireElevationForTun && !_elevated) {
       throw CoreException('needs-elevation: TUN mode requires administrator rights', needsElevation: true);
@@ -83,13 +85,14 @@ class FakeBackend implements CoreBackend {
 
   /// Rules, tuning and port passed to the last start(), for tests.
   List<String>? lastRules;
+  String? lastRouting; // routing template of the last start
   Map<String, dynamic>? lastTuning;
   int? lastPort;
 
   static const _profileRules = ['DOMAIN-SUFFIX,ya.ru,DIRECT', 'GEOIP,RU,DIRECT,no-resolve', 'MATCH,proxy'];
 
   @override
-  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false}) async {
+  Future<ValidateResult> validate(String content, {List<String>? rules, bool rulesReplace = false, String routing = ''}) async {
     if (content.trim().isEmpty || content.contains('broken')) {
       return const ValidateResult(ok: false, error: 'unrecognized config');
     }
@@ -104,7 +107,7 @@ class FakeBackend implements CoreBackend {
   }
 
   @override
-  Future<ProfileRulesInfo> profileRules(String content) async => ProfileRulesInfo(
+  Future<ProfileRulesInfo> profileRules(String content, {String routing = ''}) async => ProfileRulesInfo(
         core: CoreKind.mihomo,
         replace: true,
         rules: _profileRules,
