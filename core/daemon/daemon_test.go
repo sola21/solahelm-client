@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/makiuchi-d/gozxing"
+	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/sola21/solahelm-client/core/engine"
 )
 
@@ -194,5 +198,47 @@ func TestDetachAttach(t *testing.T) {
 	case <-srv.Done():
 	case <-time.After(5 * time.Second):
 		t.Fatal("daemon did not stop after the attached UI exited")
+	}
+}
+
+func TestQRImage(t *testing.T) {
+	srv := New(secret, t.TempDir(), nil)
+	api := httptest.NewServer(srv.Handler())
+	defer api.Close()
+
+	const link = "hysteria2://pass@vps1.example.org:443?sni=vps1.example.org#DE-hy2"
+	m, err := qrcode.NewQRCodeWriter().Encode(link, gozxing.BarcodeFormat_QR_CODE, 300, 300, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	img := image.NewGray(image.Rect(0, 0, m.GetWidth(), m.GetHeight()))
+	for y := 0; y < m.GetHeight(); y++ {
+		for x := 0; x < m.GetWidth(); x++ {
+			if !m.Get(x, y) {
+				img.Pix[y*img.Stride+x] = 255
+			}
+		}
+	}
+	var pic bytes.Buffer
+	_ = png.Encode(&pic, img)
+
+	var out struct {
+		Texts []string `json:"texts"`
+		Error string   `json:"error"`
+	}
+	if code := call(t, api.URL, "POST", "/qr/image", map[string]any{"data": pic.Bytes()}, &out); code != 200 || len(out.Texts) != 1 || out.Texts[0] != link {
+		t.Fatalf("qr/image: %d %+v", code, out)
+	}
+	// A picture without a code: an empty list, not an error.
+	var blank bytes.Buffer
+	_ = png.Encode(&blank, image.NewGray(image.Rect(0, 0, 500, 500)))
+	out.Texts = nil
+	if code := call(t, api.URL, "POST", "/qr/image", map[string]any{"data": blank.Bytes()}, &out); code != 200 || len(out.Texts) != 0 {
+		t.Fatalf("blank: %d %+v", code, out)
+	}
+	// Not a picture: an error the app can show.
+	out.Error = ""
+	if code := call(t, api.URL, "POST", "/qr/image", map[string]any{"data": []byte("text")}, &out); code != 400 || out.Error == "" {
+		t.Fatalf("garbage: %d %+v", code, out)
 	}
 }

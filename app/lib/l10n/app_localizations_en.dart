@@ -1006,4 +1006,40 @@ class SEn extends S {
   @override
   String get routingHint =>
       'For link subscriptions (universal ones): they carry no rules. “Russia direct” sends Russian sites and apps, torrents and the local network around the VPN, and blocked sites and everything else through it (legiz-ru and MetaCubeX rule sets, like the panel\'s template). Clash and sing-box profiles keep their own rules.';
+
+  @override
+  String get qrCamera => 'Camera';
+
+  @override
+  String get qrScreen => 'From the screen';
+
+  @override
+  String get qrGallery => 'From the gallery';
+
+  @override
+  String get qrImageFile => 'From a picture';
+
+  @override
+  String get qrNotFound => 'No QR code found';
+
+  @override
+  String qrName(String date) {
+    return 'QR $date';
+  }
+
+  @override
+  String get qrCameraTitle => 'Point at a QR code';
+
+  @override
+  String get qrCameraHint => 'A QR code with a subscription or server link';
+
+  @override
+  String get qrCameraDenied =>
+      'No access to the camera. Allow it in Android settings.';
+
+  @override
+  String get qrCameraError => 'The camera is not available';
+
+  @override
+  String get qrTorch => 'Flashlight';
 }

@@ -37,6 +37,7 @@ import (
 	"github.com/sola21/solahelm-client/core/convert"
 	"github.com/sola21/solahelm-client/core/detect"
 	"github.com/sola21/solahelm-client/core/engine"
+	"github.com/sola21/solahelm-client/core/qr"
 )
 
 // Mode is how traffic gets into the core.
@@ -168,6 +169,29 @@ func (s *Server) Handler() http.Handler {
 		}
 		res, err := ProfileRules([]byte(req.Content), req.Routing)
 		s.reply(w, res, err)
+	})
+	// QR codes: on the screen (desktop) or in a picture (file, gallery).
+	// {"texts": [...]}; empty when nothing was found.
+	mux.HandleFunc("POST /qr/screen", func(w http.ResponseWriter, r *http.Request) {
+		texts, err := qr.Screen()
+		if errors.Is(err, qr.ErrNotFound) {
+			texts, err = []string{}, nil
+		}
+		s.reply(w, map[string]any{"texts": texts}, err)
+	})
+	mux.HandleFunc("POST /qr/image", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Data []byte `json:"data"` // the picture, base64 in JSON
+		}
+		if err := decode(r, &req); err != nil {
+			s.reply(w, nil, err)
+			return
+		}
+		texts, err := qr.DecodeBytes(req.Data)
+		if errors.Is(err, qr.ErrNotFound) {
+			texts, err = []string{}, nil
+		}
+		s.reply(w, map[string]any{"texts": texts}, err)
 	})
 	mux.HandleFunc("POST /detect", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {

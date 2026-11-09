@@ -599,4 +599,42 @@ void main() {
     expect((st.backend as FakeBackend).lastRouting, 'all');
     await finish(t, st);
   });
+
+  testWidgets('QR from the screen: a subscription link opens the add dialog, server links become a profile', (t) async {
+    final st = newState();
+    final fake = st.backend as FakeBackend;
+    await pumpApp(t, st, const Size(1200, 900));
+    await t.tap(find.text('Подписки'));
+    await t.pumpAndSettle();
+
+    Future<void> scan() async {
+      await t.tap(find.text('QR'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('С экрана'));
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await t.pumpAndSettle();
+    }
+
+    fake.qrTexts = const [];
+    await scan();
+    expect(find.text('QR-код не найден'), findsOneWidget);
+    t.state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger)).clearSnackBars();
+
+    fake.qrTexts = const ['https://panel.example.org/sub/abc/clash'];
+    await scan();
+    expect(find.widgetWithText(TextField, 'https://panel.example.org/sub/abc/clash'), findsOneWidget);
+    await t.tap(find.byType(FilledButton).last);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 150)));
+    await t.pumpAndSettle();
+    expect(st.subscriptions, hasLength(1));
+    t.state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger)).clearSnackBars();
+
+    fake.qrTexts = const [
+      'hysteria2://pass@vps1.example.org:443?sni=vps1.example.org#DE-hy2',
+      'trojan://pass@vps1.example.org:7443?sni=vps1.example.org#DE-trojan',
+    ];
+    await scan();
+    expect(st.subscriptions, hasLength(2));
+    expect(st.subscriptions.last.name, startsWith('QR '));
+  });
 }

@@ -300,5 +300,17 @@
   "settingsRouting": "Routing",
   "routingRuDirect": "Russia direct",
   "routingAll": "Everything via VPN",
-  "routingHint": "For link subscriptions (universal ones): they carry no rules. “Russia direct” sends Russian sites and apps, torrents and the local network around the VPN, and blocked sites and everything else through it (legiz-ru and MetaCubeX rule sets, like the panel's template). Clash and sing-box profiles keep their own rules."
+  "routingHint": "For link subscriptions (universal ones): they carry no rules. “Russia direct” sends Russian sites and apps, torrents and the local network around the VPN, and blocked sites and everything else through it (legiz-ru and MetaCubeX rule sets, like the panel's template). Clash and sing-box profiles keep their own rules.",
+  "qrCamera": "Camera",
+  "qrScreen": "From the screen",
+  "qrGallery": "From the gallery",
+  "qrImageFile": "From a picture",
+  "qrNotFound": "No QR code found",
+  "qrName": "QR {date}",
+  "@qrName": {"placeholders": {"date": {"type": "String"}}},
+  "qrCameraTitle": "Point at a QR code",
+  "qrCameraHint": "A QR code with a subscription or server link",
+  "qrCameraDenied": "No access to the camera. Allow it in Android settings.",
+  "qrCameraError": "The camera is not available",
+  "qrTorch": "Flashlight"
 }

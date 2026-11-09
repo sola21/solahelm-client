@@ -1007,4 +1007,40 @@ class SRu extends S {
   @override
   String get routingHint =>
       'Для подписок-ссылок (универсальных): в них нет своих правил. «Россия напрямую» — российские сайты и приложения, торренты и локальная сеть идут мимо VPN, заблокированное и остальное — через VPN (наборы правил legiz-ru и MetaCubeX, как в шаблоне панели). Профили Clash и sing-box используют свои правила.';
+
+  @override
+  String get qrCamera => 'Камерой';
+
+  @override
+  String get qrScreen => 'С экрана';
+
+  @override
+  String get qrGallery => 'Из галереи';
+
+  @override
+  String get qrImageFile => 'Из картинки';
+
+  @override
+  String get qrNotFound => 'QR-код не найден';
+
+  @override
+  String qrName(String date) {
+    return 'QR $date';
+  }
+
+  @override
+  String get qrCameraTitle => 'Наведите на QR-код';
+
+  @override
+  String get qrCameraHint => 'QR со ссылкой на подписку или на сервер';
+
+  @override
+  String get qrCameraDenied =>
+      'Нет доступа к камере. Разрешите его в настройках Android.';
+
+  @override
+  String get qrCameraError => 'Камера недоступна';
+
+  @override
+  String get qrTorch => 'Фонарик';
 }

@@ -43,6 +43,8 @@ the VPN.
 - **Subscriptions:** sing-box JSON, Clash/mihomo YAML and "universal" ones — a list of `hysteria2://`,
   `vless://`, `trojan://`, `tuic://`, `ss://`, `anytls://` … links, plain or base64. Import from a file or the
   clipboard, traffic and expiry from the subscription headers, view and edit the profile with a check by the core.
+- **QR codes:** on Windows from the screen (every display) or a picture, on Android with the camera or from
+  the gallery; a subscription link opens the add dialog, server links become a profile.
 - **Modes:** TUN (all traffic of the device), system proxy (Windows), local port only.
 - **Nodes:** groups, latency, node selection, routing mode (rules / global / direct).
 - **Rules:** your own Clash-syntax list on top of the profile that survives subscription updates; a quick

@@ -100,6 +100,10 @@ abstract class CoreBackend {
   /// Rules and possible targets of a profile, for the rules editor.
   Future<ProfileRulesInfo> profileRules(String content, {String routing = ''});
 
+  /// Texts of the QR codes on the screen (desktop) / in a picture; empty when none.
+  Future<List<String>> qrScreen();
+  Future<List<String>> qrImage(List<int> picture);
+
   /// Rules of the running core (Clash API /rules).
   Future<List<ProfileRule>> activeRules();
 

@@ -134,6 +134,21 @@ class DesktopShell with TrayListener, WindowListener, WidgetsBindingObserver {
     await windowManager.focus();
   }
 
+  /// Runs [action] with this window out of the way (scanning a QR code on
+  /// the screen must not see the app covering it), then shows it again.
+  Future<T> whileHidden<T>(Future<T> Function() action) async {
+    final visible = await windowManager.isVisible();
+    if (visible) {
+      await windowManager.hide();
+      await Future<void>.delayed(const Duration(milliseconds: 400)); // let the desktop redraw
+    }
+    try {
+      return await action();
+    } finally {
+      if (visible) await showWindow();
+    }
+  }
+
   /// Stops the core (which also restores the system proxy) and quits.
   Future<void> exitApp() async {
     if (_exiting) return;

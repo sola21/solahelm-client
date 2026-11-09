@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../desktop.dart';
 import '../l10n/app_localizations.dart';
 import '../models.dart';
 import '../state/app_state.dart';
@@ -10,6 +13,7 @@ import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'profile_editor.dart';
+import 'qr_camera.dart';
 import 'rules.dart';
 
 class SubscriptionsScreen extends StatelessWidget {
@@ -68,6 +72,35 @@ class SubscriptionsScreen extends StatelessWidget {
               label: Text(s.pasteClipboard),
             ),
           ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: MenuAnchor(
+              builder: (context, menu, _) => OutlinedButton.icon(
+                onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+                icon: const Icon(Icons.qr_code_scanner, size: 18),
+                label: const Text('QR'),
+              ),
+              menuChildren: [
+                if (Platform.isAndroid)
+                  MenuItemButton(
+                    leadingIcon: const Icon(Icons.photo_camera_outlined),
+                    onPressed: () => _scanCamera(context),
+                    child: Text(s.qrCamera),
+                  ),
+                if (DesktopShell.supported)
+                  MenuItemButton(
+                    leadingIcon: const Icon(Icons.screenshot_monitor_outlined),
+                    onPressed: () => _scanScreen(context),
+                    child: Text(s.qrScreen),
+                  ),
+                MenuItemButton(
+                  leadingIcon: const Icon(Icons.image_outlined),
+                  onPressed: () => _scanImage(context),
+                  child: Text(Platform.isAndroid ? s.qrGallery : s.qrImageFile),
+                ),
+              ],
+            ),
+          ),
         ]),
       ],
     );
@@ -77,21 +110,88 @@ class SubscriptionsScreen extends StatelessWidget {
   /// (sing-box JSON, Clash YAML or a list of share links).
   Future<void> _paste(BuildContext context) async {
     final s = S.of(context);
-    final st = AppScope.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
     if (!context.mounted) return;
     if (text.isEmpty) {
-      messenger.showSnackBar(SnackBar(content: Text(s.clipboardEmpty)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.clipboardEmpty)));
       return;
     }
+    await _addText(context, text, s.pastedName(_now(context)));
+  }
+
+  String _now(BuildContext context) =>
+      DateFormat.Md(Localizations.localeOf(context).toString()).add_Hm().format(DateTime.now());
+
+  /// A subscription link opens the add dialog (to confirm it); share links
+  /// or config text become a profile named [name].
+  Future<void> _addText(BuildContext context, String text, String name) async {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     if (_isHttp(text) && !text.contains('\n')) {
       showAddSubscriptionDialog(context, initial: text);
       return;
     }
-    final name = s.pastedName(DateFormat.Md(Localizations.localeOf(context).toString()).add_Hm().format(DateTime.now()));
     final err = await st.importText(text, name: name);
     messenger.showSnackBar(SnackBar(content: Text(err == null ? s.profileAdded : s.errorPrefix(err))));
+  }
+
+  /// QR codes found: a subscription link is offered in the add dialog;
+  /// share links (one per code) are added together as one profile.
+  Future<void> _addQrTexts(BuildContext context, List<String> texts) async {
+    final s = S.of(context);
+    if (!context.mounted) return;
+    if (texts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.qrNotFound)));
+      return;
+    }
+    final links = texts.where((t) => _isHttp(t) && !t.contains('\n')).toList();
+    final rest = texts.where((t) => !links.contains(t)).toList();
+    if (rest.isEmpty) {
+      showAddSubscriptionDialog(context, initial: links.first);
+      return;
+    }
+    await _addText(context, rest.join('\n'), s.qrName(_now(context)));
+  }
+
+  Future<void> _scanCamera(BuildContext context) async {
+    final text = await QrCameraPage.open(context);
+    if (text == null || !context.mounted) return;
+    await _addQrTexts(context, [text]);
+  }
+
+  Future<void> _scanScreen(BuildContext context) async {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    try {
+      final shell = DesktopShell.instance;
+      final texts = shell == null ? await st.backend.qrScreen() : await shell.whileHidden(st.backend.qrScreen);
+      if (context.mounted) await _addQrTexts(context, texts);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.errorPrefix(e.toString()))));
+      }
+    }
+  }
+
+  Future<void> _scanImage(BuildContext context) async {
+    final s = S.of(context);
+    final st = AppScope.of(context);
+    const images = XTypeGroup(
+      label: 'images',
+      extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+      mimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+    );
+    final file = await openFile(acceptedTypeGroups: const [images]);
+    if (file == null) return;
+    try {
+      final texts = await st.backend.qrImage(await file.readAsBytes());
+      if (context.mounted) await _addQrTexts(context, texts);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.errorPrefix(e.toString()))));
+      }
+    }
   }
 
   Future<void> _importFile(BuildContext context) async {

@@ -363,6 +363,20 @@ class DaemonBackend implements CoreBackend {
   }
 
   @override
+  Future<List<String>> qrScreen() async {
+    await _ensure();
+    final m = await _call('POST', '/qr/screen', {});
+    return (m['texts'] as List?)?.map((e) => e.toString()).toList() ?? const [];
+  }
+
+  @override
+  Future<List<String>> qrImage(List<int> picture) async {
+    await _ensure();
+    final m = await _call('POST', '/qr/image', {'data': base64Encode(picture)});
+    return (m['texts'] as List?)?.map((e) => e.toString()).toList() ?? const [];
+  }
+
+  @override
   Future<ProfileRulesInfo> profileRules(String content, {String routing = ''}) async {
     await _ensure();
     final m = await _call('POST', '/profile-rules', {'content': content, if (routing.isNotEmpty) 'routing': routing});

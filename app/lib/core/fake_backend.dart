@@ -106,6 +106,15 @@ class FakeBackend implements CoreBackend {
     );
   }
 
+  /// What the fake "QR scan" finds.
+  List<String> qrTexts = const [];
+
+  @override
+  Future<List<String>> qrScreen() async => qrTexts;
+
+  @override
+  Future<List<String>> qrImage(List<int> picture) async => qrTexts;
+
   @override
   Future<ProfileRulesInfo> profileRules(String content, {String routing = ''}) async => ProfileRulesInfo(
         core: CoreKind.mihomo,

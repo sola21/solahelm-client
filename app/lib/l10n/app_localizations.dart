@@ -1860,6 +1860,72 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Для подписок-ссылок (универсальных): в них нет своих правил. «Россия напрямую» — российские сайты и приложения, торренты и локальная сеть идут мимо VPN, заблокированное и остальное — через VPN (наборы правил legiz-ru и MetaCubeX, как в шаблоне панели). Профили Clash и sing-box используют свои правила.'**
   String get routingHint;
+
+  /// No description provided for @qrCamera.
+  ///
+  /// In ru, this message translates to:
+  /// **'Камерой'**
+  String get qrCamera;
+
+  /// No description provided for @qrScreen.
+  ///
+  /// In ru, this message translates to:
+  /// **'С экрана'**
+  String get qrScreen;
+
+  /// No description provided for @qrGallery.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из галереи'**
+  String get qrGallery;
+
+  /// No description provided for @qrImageFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из картинки'**
+  String get qrImageFile;
+
+  /// No description provided for @qrNotFound.
+  ///
+  /// In ru, this message translates to:
+  /// **'QR-код не найден'**
+  String get qrNotFound;
+
+  /// No description provided for @qrName.
+  ///
+  /// In ru, this message translates to:
+  /// **'QR {date}'**
+  String qrName(String date);
+
+  /// No description provided for @qrCameraTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наведите на QR-код'**
+  String get qrCameraTitle;
+
+  /// No description provided for @qrCameraHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'QR со ссылкой на подписку или на сервер'**
+  String get qrCameraHint;
+
+  /// No description provided for @qrCameraDenied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет доступа к камере. Разрешите его в настройках Android.'**
+  String get qrCameraDenied;
+
+  /// No description provided for @qrCameraError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Камера недоступна'**
+  String get qrCameraError;
+
+  /// No description provided for @qrTorch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фонарик'**
+  String get qrTorch;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {
