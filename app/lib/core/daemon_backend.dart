@@ -242,9 +242,9 @@ class DaemonBackend implements CoreBackend {
   }
 
   @override
-  Future<FetchResult> fetch(String url, {CoreKind? prefer}) async {
+  Future<FetchResult> fetch(String url, {CoreKind? prefer, bool insecure = false}) async {
     await _ensure();
-    final m = await _call('POST', '/fetch', {'url': url, 'prefer': prefer?.label ?? ''});
+    final m = await _call('POST', '/fetch', {'url': url, 'prefer': prefer?.label ?? '', if (insecure) 'insecure': true});
     final det = m['detect'] as Map<String, dynamic>?;
     final expire = (m['expire'] as num?)?.toInt() ?? 0;
     return FetchResult(

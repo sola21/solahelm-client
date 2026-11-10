@@ -1042,4 +1042,150 @@ class SEn extends S {
 
   @override
   String get qrTorch => 'Flashlight';
+
+  @override
+  String get panelSignIn => 'Sign in to a panel';
+
+  @override
+  String get panelSignInTitle => 'Sign in to a SolaHelm panel';
+
+  @override
+  String get panelSignInHint =>
+      'Use the same login and password as for the panel\'s client cabinet. All your profiles are added as subscriptions and kept up to date.';
+
+  @override
+  String get panelUrl => 'Panel address';
+
+  @override
+  String get panelLogin => 'Login';
+
+  @override
+  String get panelPassword => 'Password';
+
+  @override
+  String get panelPasswordNotKept =>
+      'The password isn\'t stored: the panel gives the app its own key, which you can revoke in the cabinet.';
+
+  @override
+  String panelSignedIn(int added) {
+    return 'Done, subscriptions added: $added';
+  }
+
+  @override
+  String get panelSignInBig => 'Sign in to a SolaHelm panel';
+
+  @override
+  String get panelSignInBigHint =>
+      'Or add a subscription by link, from a file, the clipboard or a QR code';
+
+  @override
+  String get panelErrEmpty => 'Enter the login and password';
+
+  @override
+  String get panelErrBadUrl => 'Invalid panel address';
+
+  @override
+  String get panelErrInsecure =>
+      'An https:// address is needed: the password can\'t be sent unencrypted';
+
+  @override
+  String get panelErrNetwork => 'Can\'t reach the panel';
+
+  @override
+  String get panelErrNotPanel =>
+      'No SolaHelm panel with app sign-in at this address (version 1.15 or newer is needed)';
+
+  @override
+  String get panelErrCredentials => 'Wrong login or password';
+
+  @override
+  String get panelErrRateLimited => 'Too many attempts. Wait 15 minutes.';
+
+  @override
+  String get panelErrUnauthorized => 'Sign-in revoked: sign in again';
+
+  @override
+  String panelErrOther(String code) {
+    return 'The panel answered with an error: $code';
+  }
+
+  @override
+  String panelProfilesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count profiles',
+      one: '$count profile',
+      zero: 'no active profiles',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panelNeedsLogin =>
+      'Sign-in revoked (the password was changed or the app disconnected in the cabinet). Sign in again.';
+
+  @override
+  String get panelStateExpired => 'expired';
+
+  @override
+  String get panelStateLimit => 'traffic used up';
+
+  @override
+  String get panelStateOff => 'disabled';
+
+  @override
+  String get panelSynced => 'Profiles updated';
+
+  @override
+  String get panelSignInAgain => 'Sign in again';
+
+  @override
+  String get panelSignOut => 'Sign out';
+
+  @override
+  String get panelSignOutTitle => 'Sign out of the panel?';
+
+  @override
+  String panelSignOutText(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The app will be disconnected in the panel. You can keep its subscriptions ($count): they keep working.',
+      one: 'The app will be disconnected in the panel. You can keep its subscription: it keeps working.',
+      zero: 'The app will be disconnected in the panel.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panelSignOutRemove => 'Sign out and delete subscriptions';
+
+  @override
+  String get fromPanel => 'panel';
+
+  @override
+  String get panelErrNoUrl => 'Enter the panel address';
+
+  @override
+  String get panelErrCertificate =>
+      'The panel\'s certificate didn\'t pass the check. If the panel has a self-signed certificate and you trust it, tick the box below.';
+
+  @override
+  String get panelSelfSigned => 'The panel has a self-signed certificate';
+
+  @override
+  String get panelSelfSignedHint =>
+      'Tick it only if you\'re sure this is your panel: without a certificate check it is easier to impersonate.';
+
+  @override
+  String get welcomeSignInTitle => 'Sign in to a SolaHelm panel';
+
+  @override
+  String get welcomeSignInText =>
+      'If you have an account in a SolaHelm panel, sign in and all your subscriptions are added automatically. Otherwise you can add a subscription later by link, from a file or a QR code.';
+
+  @override
+  String get welcomeSignInSkip => 'Skip, I\'ll add a subscription myself';
 }

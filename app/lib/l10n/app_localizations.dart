@@ -1926,6 +1926,234 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Фонарик'**
   String get qrTorch;
+
+  /// No description provided for @panelSignIn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в панель'**
+  String get panelSignIn;
+
+  /// No description provided for @panelSignInTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход в панель SolaHelm'**
+  String get panelSignInTitle;
+
+  /// No description provided for @panelSignInHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логин и пароль — те же, что от личного кабинета в панели. Все ваши профили добавятся подписками и будут обновляться сами.'**
+  String get panelSignInHint;
+
+  /// No description provided for @panelUrl.
+  ///
+  /// In ru, this message translates to:
+  /// **'Адрес панели'**
+  String get panelUrl;
+
+  /// No description provided for @panelLogin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логин'**
+  String get panelLogin;
+
+  /// No description provided for @panelPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль'**
+  String get panelPassword;
+
+  /// No description provided for @panelPasswordNotKept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль не сохраняется: панель выдаёт приложению отдельный ключ, его можно отозвать в кабинете.'**
+  String get panelPasswordNotKept;
+
+  /// No description provided for @panelSignedIn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Готово, добавлено подписок: {added}'**
+  String panelSignedIn(int added);
+
+  /// No description provided for @panelSignInBig.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в панель SolaHelm'**
+  String get panelSignInBig;
+
+  /// No description provided for @panelSignInBigHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Или добавьте подписку по ссылке, из файла, из буфера или по QR'**
+  String get panelSignInBigHint;
+
+  /// No description provided for @panelErrEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите логин и пароль'**
+  String get panelErrEmpty;
+
+  /// No description provided for @panelErrBadUrl.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный адрес панели'**
+  String get panelErrBadUrl;
+
+  /// No description provided for @panelErrInsecure.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужен адрес с https:// — пароль нельзя отправлять без шифрования'**
+  String get panelErrInsecure;
+
+  /// No description provided for @panelErrNetwork.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет связи с панелью'**
+  String get panelErrNetwork;
+
+  /// No description provided for @panelErrNotPanel.
+  ///
+  /// In ru, this message translates to:
+  /// **'По этому адресу нет панели SolaHelm с входом для приложений (нужна версия 1.15 или новее)'**
+  String get panelErrNotPanel;
+
+  /// No description provided for @panelErrCredentials.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный логин или пароль'**
+  String get panelErrCredentials;
+
+  /// No description provided for @panelErrRateLimited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Слишком много попыток. Подождите 15 минут.'**
+  String get panelErrRateLimited;
+
+  /// No description provided for @panelErrUnauthorized.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход отозван — войдите заново'**
+  String get panelErrUnauthorized;
+
+  /// No description provided for @panelErrOther.
+  ///
+  /// In ru, this message translates to:
+  /// **'Панель ответила ошибкой: {code}'**
+  String panelErrOther(String code);
+
+  /// No description provided for @panelProfilesCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, =0{нет активных профилей} one{{count} профиль} few{{count} профиля} other{{count} профилей}}'**
+  String panelProfilesCount(int count);
+
+  /// No description provided for @panelNeedsLogin.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход отозван (сменили пароль или отключили приложение в кабинете). Войдите заново.'**
+  String get panelNeedsLogin;
+
+  /// No description provided for @panelStateExpired.
+  ///
+  /// In ru, this message translates to:
+  /// **'срок истёк'**
+  String get panelStateExpired;
+
+  /// No description provided for @panelStateLimit.
+  ///
+  /// In ru, this message translates to:
+  /// **'трафик исчерпан'**
+  String get panelStateLimit;
+
+  /// No description provided for @panelStateOff.
+  ///
+  /// In ru, this message translates to:
+  /// **'отключён'**
+  String get panelStateOff;
+
+  /// No description provided for @panelSynced.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профили обновлены'**
+  String get panelSynced;
+
+  /// No description provided for @panelSignInAgain.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти заново'**
+  String get panelSignInAgain;
+
+  /// No description provided for @panelSignOut.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти'**
+  String get panelSignOut;
+
+  /// No description provided for @panelSignOutTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти из панели?'**
+  String get panelSignOutTitle;
+
+  /// No description provided for @panelSignOutText.
+  ///
+  /// In ru, this message translates to:
+  /// **'{count, plural, =0{Приложение будет отключено в панели.} one{Приложение будет отключено в панели. Подписку из неё можно оставить — она продолжит работать.} other{Приложение будет отключено в панели. Подписки из неё ({count}) можно оставить — они продолжат работать.}}'**
+  String panelSignOutText(int count);
+
+  /// No description provided for @panelSignOutRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выйти и удалить подписки'**
+  String get panelSignOutRemove;
+
+  /// No description provided for @fromPanel.
+  ///
+  /// In ru, this message translates to:
+  /// **'панель'**
+  String get fromPanel;
+
+  /// No description provided for @panelErrNoUrl.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите адрес панели'**
+  String get panelErrNoUrl;
+
+  /// No description provided for @panelErrCertificate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сертификат панели не прошёл проверку. Если у панели самоподписанный сертификат и вы ей доверяете, отметьте галку ниже.'**
+  String get panelErrCertificate;
+
+  /// No description provided for @panelSelfSigned.
+  ///
+  /// In ru, this message translates to:
+  /// **'У панели самоподписанный сертификат'**
+  String get panelSelfSigned;
+
+  /// No description provided for @panelSelfSignedHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отмечайте, только если уверены, что это ваша панель: без проверки сертификата подменить её проще.'**
+  String get panelSelfSignedHint;
+
+  /// No description provided for @welcomeSignInTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход в панель SolaHelm'**
+  String get welcomeSignInTitle;
+
+  /// No description provided for @welcomeSignInText.
+  ///
+  /// In ru, this message translates to:
+  /// **'Если у вас есть аккаунт в панели SolaHelm — войдите, и все ваши подписки добавятся сами. Иначе подписку можно добавить позже по ссылке, из файла или по QR.'**
+  String get welcomeSignInText;
+
+  /// No description provided for @welcomeSignInSkip.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пропустить, добавлю подписку сам'**
+  String get welcomeSignInSkip;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

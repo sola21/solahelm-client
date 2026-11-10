@@ -205,6 +205,7 @@ class Settings extends ChangeNotifier {
     this.checkUpdates = true,
     this.vpnNotification = true,
     this.uiMode,
+    this.welcomeDone = false,
     this.showExitInfo = true,
     this.file,
   });
@@ -220,6 +221,7 @@ class Settings extends ChangeNotifier {
   bool checkUpdates; // look for a new release on start
   bool vpnNotification; // Android: a normal "VPN is running" notification (false: folded)
   UiMode? uiMode; // null: not chosen yet, ask on start
+  bool welcomeDone; // first start finished (mode chosen, panel sign-in offered)
   bool showExitInfo; // look up the exit IP and country after connecting
 
   bool get simple => uiMode == UiMode.simple;
@@ -257,6 +259,7 @@ class Settings extends ChangeNotifier {
         s.checkUpdates = m['checkUpdates'] as bool? ?? true;
         s.vpnNotification = m['vpnNotification'] as bool? ?? true;
         s.uiMode = UiMode.values.asNameMap()[m['uiMode']];
+        s.welcomeDone = m['welcomeDone'] as bool? ?? false;
         s.showExitInfo = m['showExitInfo'] as bool? ?? true;
         s.core = CoreSettings.fromJson(m['coreSettings']);
         final hk = m['toggleHotkey'];
@@ -285,6 +288,7 @@ class Settings extends ChangeNotifier {
         'checkUpdates': checkUpdates,
         'vpnNotification': vpnNotification,
         'uiMode': uiMode?.name,
+        'welcomeDone': welcomeDone,
         'showExitInfo': showExitInfo,
         'coreSettings': core.toJson(),
         'toggleHotkey': toggleHotkey,
@@ -357,6 +361,12 @@ class Settings extends ChangeNotifier {
 
   void setCheckUpdates(bool v) {
     checkUpdates = v;
+    notifyListeners();
+    _save();
+  }
+
+  void setWelcomeDone() {
+    welcomeDone = true;
     notifyListeners();
     _save();
   }

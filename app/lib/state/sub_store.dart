@@ -10,6 +10,10 @@ abstract class SubStore {
   Future<String?> content(String id);
   Future<void> saveContent(String id, String content);
   Future<void> delete(String id);
+
+  /// Signed-in SolaHelm panels (they hold app tokens).
+  Future<List<PanelAccount>> loadPanels();
+  Future<void> savePanels(List<PanelAccount> panels);
 }
 
 /// `subs.json` plus `subs/<id>.conf` in the app data dir.
@@ -20,6 +24,26 @@ class FileSubStore implements SubStore {
   String get _sep => Platform.pathSeparator;
   File get _index => File('${dir.path}${_sep}subs.json');
   File _body(String id) => File('${dir.path}${_sep}subs$_sep$id.conf');
+  File get _panels => File('${dir.path}${_sep}panels.json');
+
+  @override
+  Future<List<PanelAccount>> loadPanels() async {
+    try {
+      if (!await _panels.exists()) return [];
+      final list = jsonDecode(await _panels.readAsString()) as List;
+      return list.map((e) => PanelAccount.fromJson((e as Map).cast<String, dynamic>())).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> savePanels(List<PanelAccount> panels) async {
+    await dir.create(recursive: true);
+    final tmp = File('${_panels.path}.tmp');
+    await tmp.writeAsString(jsonEncode(panels.map((p) => p.toJson()).toList()), flush: true);
+    await tmp.rename(_panels.path);
+  }
 
   @override
   Future<(List<Subscription>, String?)> load() async {
@@ -65,6 +89,16 @@ class FileSubStore implements SubStore {
 }
 
 class MemorySubStore implements SubStore {
+  final List<PanelAccount> _panelList = [];
+
+  @override
+  Future<List<PanelAccount>> loadPanels() async => List.of(_panelList);
+
+  @override
+  Future<void> savePanels(List<PanelAccount> panels) async => _panelList
+    ..clear()
+    ..addAll(panels);
+
   final List<Subscription> _subs = [];
   String? _active;
   final Map<String, String> _bodies = {};

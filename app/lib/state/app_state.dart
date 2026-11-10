@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/backend.dart';
+import '../core/panel_api.dart';
 import '../core/updater.dart';
 import '../models.dart';
 import 'settings.dart';
@@ -211,7 +212,146 @@ class AppState extends ChangeNotifier {
       ..clear()
       ..addAll(list);
     activeId = active ?? (list.isEmpty ? null : list.first.id);
+    panels
+      ..clear()
+      ..addAll(await store.loadPanels());
     _notify();
+  }
+
+  // ---- SolaHelm panels: sign in, profiles -> subscriptions ----
+
+  /// Set by main(); tests put a fake here.
+  PanelApi panelApi = const PanelApi();
+  final List<PanelAccount> panels = [];
+  bool busyPanels = false;
+
+  Future<void> _savePanels() => store.savePanels(panels);
+
+  /// Signs in to a panel (login + password of the client cabinet) and adds the
+  /// client's active profiles as subscriptions. Returns a PanelException code
+  /// or null. The password isn't kept: the panel gives an app token.
+  Future<String?> loginPanel(String url, String login, String password, {bool selfSigned = false}) async {
+    busyPanels = true;
+    _notify();
+    try {
+      final base = PanelApi.normalizeUrl(url);
+      final r = await panelApi.login(base, login.trim(), password, selfSigned: selfSigned);
+      final who = r.clientLogin.isEmpty ? login.trim() : r.clientLogin;
+      var acc = panels.where((p) => p.url == base && p.login == who).firstOrNull;
+      if (acc == null) {
+        acc = PanelAccount(
+          id: DateTime.now().microsecondsSinceEpoch.toRadixString(36),
+          url: base,
+          login: who,
+          token: r.token!,
+          insecure: selfSigned,
+        );
+        panels.add(acc);
+      } else {
+        acc
+          ..token = r.token!
+          ..insecure = selfSigned;
+      }
+      _takeReply(acc, r);
+      await _savePanels();
+      await _applyPanel(acc);
+      return null;
+    } on PanelException catch (e) {
+      return e.code;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      busyPanels = false;
+      _notify();
+    }
+  }
+
+  /// Fetches the profiles again: new active profiles become subscriptions,
+  /// a changed subscription link is followed. Returns a PanelException code or null.
+  Future<String?> syncPanel(String id, {bool quiet = false}) async {
+    final acc = panels.where((p) => p.id == id).firstOrNull;
+    if (acc == null) return 'not found';
+    if (acc.needsLogin) return 'unauthorized';
+    if (!quiet) {
+      busyPanels = true;
+      _notify();
+    }
+    try {
+      _takeReply(acc, await panelApi.profiles(acc.url, acc.token, selfSigned: acc.insecure));
+      await _savePanels();
+      await _applyPanel(acc, quiet: quiet);
+      return null;
+    } on PanelException catch (e) {
+      if (e.code == 'unauthorized') {
+        acc.needsLogin = true; // revoked in the cabinet, password changed, or the client disabled
+        await _savePanels();
+      }
+      return e.code;
+    } finally {
+      busyPanels = false;
+      _notify();
+    }
+  }
+
+  /// Quietly syncs every panel (at start).
+  Future<void> syncPanels() async {
+    for (final p in List.of(panels)) {
+      try {
+        await syncPanel(p.id, quiet: true);
+      } catch (_) {}
+    }
+  }
+
+  /// Signs out: the token is revoked in the panel (best effort) and forgotten.
+  /// The subscriptions stay, unless [removeSubscriptions].
+  Future<void> logoutPanel(String id, {bool removeSubscriptions = false}) async {
+    final acc = panels.where((p) => p.id == id).firstOrNull;
+    if (acc == null) return;
+    try {
+      if (!acc.needsLogin) await panelApi.logout(acc.url, acc.token, selfSigned: acc.insecure);
+    } catch (_) {}
+    panels.remove(acc);
+    await _savePanels();
+    for (final s in subscriptions.where((s) => s.panelId == id).toList()) {
+      if (removeSubscriptions) {
+        await removeSubscription(s.id);
+      } else {
+        final i = subscriptions.indexOf(s);
+        subscriptions[i] = s.copyWith(panelId: () => null, panelProfileId: () => null);
+      }
+    }
+    await _persist();
+    _notify();
+  }
+
+  void _takeReply(PanelAccount acc, PanelReply r) {
+    acc
+      ..panelName = r.panelName
+      ..panelVersion = r.panelVersion
+      ..clientName = r.clientName
+      ..profiles = r.profiles
+      ..syncedAt = DateTime.now()
+      ..needsLogin = false;
+  }
+
+  /// Active profiles -> subscriptions (added once, then kept in step).
+  Future<void> _applyPanel(PanelAccount acc, {bool quiet = false}) async {
+    for (final p in acc.profiles.where((p) => p.active)) {
+      final url = p.subscriptionUrl!;
+      var i = subscriptions.indexWhere((s) => s.panelId == acc.id && s.panelProfileId == p.id);
+      if (i < 0) i = subscriptions.indexWhere((s) => s.url == url); // added by hand before
+      if (i >= 0) {
+        final s = subscriptions[i];
+        final moved = s.url != url; // the panel re-issued the subscription link
+        subscriptions[i] = s.copyWith(
+            url: url, panelId: () => acc.id, panelProfileId: () => p.id, insecure: acc.insecure);
+        if (moved) await refreshSubscription(s.id);
+        continue;
+      }
+      final (err, _) = await _addSubscription(url, panelId: acc.id, panelProfileId: p.id, insecure: acc.insecure);
+      if (err != null && !quiet) _error(CoreException('${p.name}: $err'));
+    }
+    await _persist();
   }
 
   void _notify() {
@@ -223,22 +363,27 @@ class AppState extends ChangeNotifier {
   // ---- subscriptions ----
 
   /// Downloads and stores a subscription. Returns an error message or null.
-  Future<String?> addSubscription(String url) async {
+  Future<String?> addSubscription(String url) async => (await _addSubscription(url)).$1;
+
+  /// (error, id of the new subscription).
+  Future<(String?, String?)> _addSubscription(String url,
+      {String? panelId, int? panelProfileId, bool insecure = false}) async {
     busySubscriptions = true;
     _notify();
     try {
-      final r = await backend.fetch(url);
-      if (r.format == null) return r.error ?? 'Unknown subscription format';
+      final r = await backend.fetch(url, insecure: insecure);
+      if (r.format == null) return (r.error ?? 'Unknown subscription format', null);
       final id = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
       final host = Uri.tryParse(url)?.host ?? url;
-      final sub = _fromFetch(id, (r.title?.isNotEmpty ?? false) ? r.title! : host, url, r);
+      final sub = _fromFetch(id, (r.title?.isNotEmpty ?? false) ? r.title! : host, url, r)
+          .copyWith(panelId: () => panelId, panelProfileId: () => panelProfileId, insecure: insecure);
       await store.saveContent(id, r.content);
       subscriptions.add(sub);
       activeId ??= id;
       await _persist();
-      return null;
+      return (null, id);
     } catch (e) {
-      return e.toString();
+      return (e.toString(), null);
     } finally {
       busySubscriptions = false;
       _notify();
@@ -284,11 +429,17 @@ class AppState extends ChangeNotifier {
           edited: false,
         );
       } else {
-        final r = await backend.fetch(old.url);
+        final r = await backend.fetch(old.url, insecure: old.insecure);
         if (r.format == null) throw CoreException(r.error ?? 'Unknown subscription format');
         await store.saveContent(id, r.content);
         final fresh = _fromFetch(id, old.name, old.url, r);
-        subscriptions[i] = fresh.copyWith(rules: () => old.rules, rulesReplace: old.rulesReplace);
+        subscriptions[i] = fresh.copyWith(
+          rules: () => old.rules,
+          rulesReplace: old.rulesReplace,
+          panelId: () => old.panelId,
+          panelProfileId: () => old.panelProfileId,
+          insecure: old.insecure,
+        );
       }
       await _persist();
       if (id == activeId && status == LinkStatus.connected) await reconnect();

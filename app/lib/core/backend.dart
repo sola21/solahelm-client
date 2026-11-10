@@ -77,7 +77,8 @@ class TrafficSnapshot {
 /// core's Clash API; FakeBackend drives tests and the demo.
 abstract class CoreBackend {
   bool get elevated;
-  Future<FetchResult> fetch(String url, {CoreKind? prefer});
+  /// [insecure]: accept a self-signed certificate (a panel the user chose to trust).
+  Future<FetchResult> fetch(String url, {CoreKind? prefer, bool insecure = false});
   Future<CoreStatus> start({
     required String content,
     required CorePref core,

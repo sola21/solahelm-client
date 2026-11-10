@@ -43,6 +43,10 @@ the VPN.
 - **Subscriptions:** sing-box JSON, Clash/mihomo YAML and "universal" ones — a list of `hysteria2://`,
   `vless://`, `trojan://`, `tuic://`, `ss://`, `anytls://` … links, plain or base64. Import from a file or the
   clipboard, traffic and expiry from the subscription headers, view and edit the profile with a check by the core.
+- **Sign in to a SolaHelm panel** with the client cabinet's login and password (panel 1.15+): all the client's
+  profiles are added as subscriptions and kept up to date; the password isn't stored — the panel gives the app its
+  own key, which can be revoked in the cabinet. Panels with a self-signed certificate work after an explicit
+  confirmation.
 - **QR codes:** on Windows from the screen (every display) or a picture, on Android with the camera or from
   the gallery; a subscription link opens the add dialog, server links become a profile.
 - **Modes:** TUN (all traffic of the device), system proxy (Windows), local port only.

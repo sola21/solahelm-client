@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -210,12 +211,14 @@ func (s *Server) Handler() http.Handler {
 		var req struct {
 			URL    string `json:"url"`
 			Prefer string `json:"prefer"`
+			// Insecure: accept a self-signed certificate (a panel the user chose to trust).
+			Insecure bool `json:"insecure"`
 		}
 		if err := decode(r, &req); err != nil {
 			s.reply(w, nil, err)
 			return
 		}
-		res, err := Fetch(r.Context(), req.URL, engine.Kind(req.Prefer))
+		res, err := Fetch(r.Context(), req.URL, engine.Kind(req.Prefer), req.Insecure)
 		s.reply(w, res, err)
 	})
 	// The UI exits but the core keeps running; a later UI attaches again.
@@ -447,8 +450,16 @@ func (s *Server) reply(w http.ResponseWriter, v any, err error) {
 // UserAgent identifies the client to subscription servers.
 const UserAgent = "solahelm-client/0.1"
 
-// Fetch downloads a subscription and reads the usual headers.
-func Fetch(ctx context.Context, url string, prefer engine.Kind) (*FetchResult, error) {
+// insecureClient accepts any server certificate: only for subscriptions the
+// user explicitly marked as coming from a panel with a self-signed certificate.
+var insecureClient = &http.Client{Transport: &http.Transport{
+	Proxy:           http.ProxyFromEnvironment,
+	TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // the user's explicit choice
+}}
+
+// Fetch downloads a subscription and reads the usual headers. insecure skips
+// the certificate check (a self-signed panel the user chose to trust).
+func Fetch(ctx context.Context, url string, prefer engine.Kind, insecure bool) (*FetchResult, error) {
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		return nil, errors.New("subscription URL must start with http:// or https://")
 	}
@@ -459,7 +470,11 @@ func Fetch(ctx context.Context, url string, prefer engine.Kind) (*FetchResult, e
 		return nil, err
 	}
 	req.Header.Set("User-Agent", UserAgent)
-	resp, err := http.DefaultClient.Do(req)
+	client := http.DefaultClient
+	if insecure {
+		client = insecureClient
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

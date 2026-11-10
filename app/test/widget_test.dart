@@ -15,7 +15,7 @@ import 'package:solahelm_client/state/settings.dart';
 import 'package:solahelm_client/state/sub_store.dart';
 
 AppState newState({String? lang = 'ru', ProxyMode mode = ProxyMode.portOnly, UiMode? ui = UiMode.advanced}) => AppState(
-      Settings(languageCode: lang, themeMode: ThemeMode.light, proxyMode: mode, uiMode: ui),
+      Settings(languageCode: lang, themeMode: ThemeMode.light, proxyMode: mode, uiMode: ui, welcomeDone: ui != null),
       FakeBackend(random: Random(1), startDelay: const Duration(milliseconds: 50)),
       MemorySubStore(),
     );
@@ -488,6 +488,11 @@ void main() {
     await t.tap(find.text('Простой'));
     await t.pumpAndSettle();
     expect(st.settings.uiMode, UiMode.simple);
+    // Second step: sign in to a panel, or skip.
+    expect(find.text('Вход в панель SolaHelm'), findsOneWidget);
+    await t.tap(find.text('Пропустить, добавлю подписку сам'));
+    await t.pumpAndSettle();
+    expect(st.settings.welcomeDone, isTrue);
     expect(find.text('Узлы'), findsOneWidget);
     expect(find.text('Правила'), findsNothing); // not in the bottom bar
     expect(find.text('Соединения'), findsNothing); // no Connections/Log card on the home screen

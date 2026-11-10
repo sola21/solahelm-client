@@ -12,6 +12,7 @@ import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'panel_login.dart';
 import 'profile_editor.dart';
 import 'qr_camera.dart';
 import 'rules.dart';
@@ -30,11 +31,16 @@ class SubscriptionsScreen extends StatelessWidget {
         SectionHeader(
           s.navSubscriptions,
           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (st.busySubscriptions)
+            if (st.busySubscriptions || st.busyPanels)
               const Padding(
                 padding: EdgeInsets.only(right: 8),
                 child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
               ),
+            IconButton(
+              tooltip: s.panelSignIn,
+              icon: const Icon(Icons.login),
+              onPressed: () => showPanelLoginDialog(context, st),
+            ),
             IconButton(
               tooltip: s.addSubscription,
               icon: const Icon(Icons.add),
@@ -42,6 +48,10 @@ class SubscriptionsScreen extends StatelessWidget {
             ),
           ]),
         ),
+        for (final acc in st.panels) ...[
+          _PanelCard(acc: acc, state: st),
+          const SizedBox(height: 8),
+        ],
         if (st.subscriptions.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -49,6 +59,16 @@ class SubscriptionsScreen extends StatelessWidget {
               Text(s.noSubscriptionsTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
               Text(s.noSubscriptions, textAlign: TextAlign.center, style: TextStyle(color: p.muted)),
+              if (st.panels.isEmpty) ...[
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => showPanelLoginDialog(context, st),
+                  icon: const Icon(Icons.login, size: 18),
+                  label: Text(s.panelSignInBig),
+                ),
+                const SizedBox(height: 6),
+                Text(s.panelSignInBigHint, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: p.muted)),
+              ],
             ]),
           ),
         for (final sub in st.subscriptions) ...[
@@ -324,6 +344,7 @@ class _SubscriptionCard extends StatelessWidget {
       if (sub.updatedAt != null) s.updatedAt(DateFormat.Md(locale).add_Hm().format(sub.updatedAt!)),
     ];
     final badges = <Widget>[
+      if (sub.panelId != null) CountBadge.label(s.fromPanel, color: Theme.of(context).colorScheme.primary),
       if (sub.source == SubSource.file) CountBadge.label(s.sourceFile),
       if (sub.source == SubSource.pasted) CountBadge.label(s.sourcePasted),
       if (sub.edited) CountBadge.label(s.editedBadge, color: p.warning),
@@ -398,6 +419,104 @@ class _SubscriptionCard extends StatelessWidget {
             ],
           ]),
         ),
+      ),
+    );
+  }
+}
+
+
+/// A signed-in SolaHelm panel: who, how many profiles, refresh / sign in again / sign out.
+class _PanelCard extends StatelessWidget {
+  const _PanelCard({required this.acc, required this.state});
+  final PanelAccount acc;
+  final AppState state;
+
+  String _stateText(S s, String st) => switch (st) {
+        'expired' => s.panelStateExpired,
+        'limit' => s.panelStateLimit,
+        'off' => s.panelStateOff,
+        _ => st,
+      };
+
+  Future<void> _refresh(BuildContext context) async {
+    final s = S.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final err = await state.syncPanel(acc.id);
+    messenger.showSnackBar(SnackBar(content: Text(err == null ? s.panelSynced : panelError(s, err))));
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final s = S.of(context);
+    final linked = state.subscriptions.where((x) => x.panelId == acc.id).length;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.panelSignOutTitle),
+        content: Text(s.panelSignOutText(linked)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(s.cancel)),
+          if (linked > 0) TextButton(onPressed: () => Navigator.pop(ctx, 'remove'), child: Text(s.panelSignOutRemove)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, 'keep'), child: Text(s.panelSignOut)),
+        ],
+      ),
+    );
+    if (choice == null) return;
+    await state.logoutPanel(acc.id, removeSubscriptions: choice == 'remove');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
+    final locale = Localizations.localeOf(context).toString();
+    final active = acc.profiles.where((x) => x.active).length;
+    final inactive = acc.profiles.where((x) => !x.active).toList();
+    final who = acc.clientName.isNotEmpty ? acc.clientName : acc.login;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 10),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6, right: 10),
+            child: Icon(acc.needsLogin ? Icons.no_accounts_outlined : Icons.account_circle_outlined,
+                color: acc.needsLogin ? p.warning : Theme.of(context).colorScheme.primary),
+          ),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const SizedBox(height: 4),
+              Text('${acc.panelName} · $who', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text(
+                [
+                  acc.host,
+                  s.panelProfilesCount(active),
+                  if (acc.syncedAt != null) s.updatedAt(DateFormat.Md(locale).add_Hm().format(acc.syncedAt!)),
+                ].join(' · '),
+                style: TextStyle(fontSize: 12, color: p.muted),
+              ),
+              if (acc.needsLogin) ...[
+                const SizedBox(height: 4),
+                Text(s.panelNeedsLogin, style: TextStyle(fontSize: 12, color: p.warning)),
+              ],
+              for (final x in inactive)
+                Text('${x.name}: ${_stateText(s, x.state)}', style: TextStyle(fontSize: 12, color: p.warning)),
+            ]),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (v) => switch (v) {
+              'refresh' => _refresh(context),
+              'login' => showPanelLoginDialog(context, state, url: acc.url, login: acc.login, selfSigned: acc.insecure),
+              'logout' => _logout(context),
+              _ => null,
+            },
+            itemBuilder: (_) => [
+              if (!acc.needsLogin) PopupMenuItem(value: 'refresh', child: Text(s.refresh)),
+              PopupMenuItem(value: 'login', child: Text(s.panelSignInAgain)),
+              PopupMenuItem(value: 'logout', child: Text(s.panelSignOut)),
+            ],
+          ),
+        ]),
       ),
     );
   }

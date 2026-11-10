@@ -100,11 +100,19 @@ class Subscription {
     this.edited = false,
     this.rules,
     this.rulesReplace = false,
+    this.panelId,
+    this.panelProfileId,
+    this.insecure = false,
   });
 
   final String id;
   final String name;
   final String url;
+  /// Came from a SolaHelm panel account (PanelAccount.id) and its profile there.
+  final String? panelId;
+  final int? panelProfileId;
+  /// Downloaded without checking the certificate (a self-signed panel the user trusts).
+  final bool insecure;
   final SubFormat? format; // null: not downloaded yet
   final CoreKind? core; // what auto-detection picked
   final List<String> protocols;
@@ -135,11 +143,18 @@ class Subscription {
     List<String>? unsupported,
     List<String>? Function()? rules,
     bool? rulesReplace,
+    String? url,
+    String? Function()? panelId,
+    int? Function()? panelProfileId,
+    bool? insecure,
   }) =>
       Subscription(
         id: id,
         name: name ?? this.name,
-        url: url,
+        url: url ?? this.url,
+        panelId: panelId == null ? this.panelId : panelId(),
+        panelProfileId: panelProfileId == null ? this.panelProfileId : panelProfileId(),
+        insecure: insecure ?? this.insecure,
         format: format ?? this.format,
         core: core ?? this.core,
         protocols: protocols ?? this.protocols,
@@ -166,6 +181,9 @@ class Subscription {
         'id': id,
         'name': name,
         'url': url,
+        if (panelId != null) 'panelId': panelId,
+        if (panelProfileId != null) 'panelProfileId': panelProfileId,
+        if (insecure) 'insecure': true,
         'format': format?.name,
         'core': core?.name,
         'protocols': protocols,
@@ -187,6 +205,9 @@ class Subscription {
         id: m['id'] as String,
         name: m['name'] as String,
         url: m['url'] as String,
+        panelId: m['panelId'] as String?,
+        panelProfileId: (m['panelProfileId'] as num?)?.toInt(),
+        insecure: m['insecure'] as bool? ?? false,
         format: SubFormat.values.asNameMap()[m['format']],
         core: CoreKind.values.asNameMap()[m['core']],
         protocols: (m['protocols'] as List?)?.cast<String>() ?? const [],
@@ -358,4 +379,118 @@ class RuleLine {
   @override
   String toString() =>
       type == 'MATCH' ? 'MATCH,$target' : '$type,$payload,$target${noResolve && canNoResolve ? ',no-resolve' : ''}';
+}
+
+
+/// A profile of the signed-in client in a SolaHelm panel.
+@immutable
+class PanelProfile {
+  const PanelProfile({
+    required this.id,
+    required this.name,
+    required this.state,
+    this.expiresAt,
+    this.trafficUsed = 0,
+    this.trafficLimit = 0,
+    this.servers = 0,
+    this.subscriptionUrl,
+  });
+
+  final int id;
+  final String name;
+  final String state; // on, off, expired, limit
+  final DateTime? expiresAt;
+  final int trafficUsed, trafficLimit; // bytes; limit 0 = none
+  final int servers;
+  final String? subscriptionUrl; // the universal subscription; null unless active
+
+  bool get active => state == 'on' && subscriptionUrl != null;
+
+  static PanelProfile fromJson(Map<String, dynamic> m) {
+    final exp = (m['expires_at'] as num?)?.toInt() ?? 0;
+    final sub = m['subscription'];
+    return PanelProfile(
+      id: (m['id'] as num).toInt(),
+      name: (m['name'] ?? '').toString(),
+      state: (m['state'] ?? '').toString(),
+      expiresAt: exp > 0 ? DateTime.fromMillisecondsSinceEpoch(exp * 1000) : null,
+      trafficUsed: (m['traffic_used'] as num?)?.toInt() ?? 0,
+      trafficLimit: (m['traffic_limit'] as num?)?.toInt() ?? 0,
+      servers: (m['servers'] as num?)?.toInt() ?? 0,
+      subscriptionUrl: sub is Map ? sub['universal'] as String? : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'state': state,
+        'expires_at': (expiresAt?.millisecondsSinceEpoch ?? 0) ~/ 1000,
+        'traffic_used': trafficUsed,
+        'traffic_limit': trafficLimit,
+        'servers': servers,
+        'subscription': subscriptionUrl == null ? null : {'universal': subscriptionUrl},
+      };
+}
+
+/// A signed-in SolaHelm panel: the app token (not the password) and what the
+/// panel said last time.
+class PanelAccount {
+  PanelAccount({
+    required this.id,
+    required this.url,
+    required this.login,
+    required this.token,
+    this.panelName = 'SolaHelm',
+    this.panelVersion = '',
+    this.clientName = '',
+    this.profiles = const [],
+    this.syncedAt,
+    this.needsLogin = false,
+    this.insecure = false,
+  });
+
+  final String id;
+  final String url; // panel base, e.g. https://panel.example.org/hy
+  final String login;
+  String token;
+  String panelName;
+  String panelVersion;
+  String clientName;
+  List<PanelProfile> profiles;
+  DateTime? syncedAt;
+  bool needsLogin; // the token was revoked: sign in again
+  bool insecure; // the user accepted the panel's self-signed certificate
+
+  String get host => Uri.tryParse(url)?.host ?? url;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'url': url,
+        'login': login,
+        'token': token,
+        'panelName': panelName,
+        'panelVersion': panelVersion,
+        'clientName': clientName,
+        'profiles': profiles.map((p) => p.toJson()).toList(),
+        'syncedAt': syncedAt?.millisecondsSinceEpoch,
+        'needsLogin': needsLogin,
+        if (insecure) 'insecure': true,
+      };
+
+  static PanelAccount fromJson(Map<String, dynamic> m) => PanelAccount(
+        id: m['id'] as String,
+        url: m['url'] as String,
+        login: (m['login'] ?? '').toString(),
+        token: (m['token'] ?? '').toString(),
+        panelName: (m['panelName'] ?? 'SolaHelm').toString(),
+        panelVersion: (m['panelVersion'] ?? '').toString(),
+        clientName: (m['clientName'] ?? '').toString(),
+        profiles: ((m['profiles'] as List?) ?? const [])
+            .map((e) => PanelProfile.fromJson((e as Map).cast<String, dynamic>()))
+            .toList(),
+        syncedAt: m['syncedAt'] is num ? DateTime.fromMillisecondsSinceEpoch((m['syncedAt'] as num).toInt()) : null,
+        needsLogin: m['needsLogin'] as bool? ?? false,
+        insecure: m['insecure'] as bool? ?? false,
+      );
 }

@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -240,5 +241,22 @@ func TestQRImage(t *testing.T) {
 	out.Error = ""
 	if code := call(t, api.URL, "POST", "/qr/image", map[string]any{"data": []byte("text")}, &out); code != 400 || out.Error == "" {
 		t.Fatalf("garbage: %d %+v", code, out)
+	}
+}
+
+// A panel with a self-signed certificate: refused by default, fetched only
+// when the user chose to trust it.
+func TestFetchSelfSigned(t *testing.T) {
+	const links = "hysteria2://pass@vps1.example.org:443?sni=vps1.example.org#DE-hy2\n"
+	panel := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, links)
+	}))
+	defer panel.Close()
+	if _, err := Fetch(context.Background(), panel.URL+"/sub/x", "", false); err == nil {
+		t.Fatal("a self-signed certificate was accepted without the user's consent")
+	}
+	res, err := Fetch(context.Background(), panel.URL+"/sub/x", "", true)
+	if err != nil || res.Detect == nil || res.Detect.Format != "share-links" {
+		t.Fatalf("insecure fetch: %+v %v", res, err)
 	}
 }

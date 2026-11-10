@@ -30,7 +30,8 @@ class FakeBackend implements CoreBackend {
   bool get elevated => _elevated;
 
   @override
-  Future<FetchResult> fetch(String url, {CoreKind? prefer}) async {
+  Future<FetchResult> fetch(String url, {CoreKind? prefer, bool insecure = false}) async {
+    lastFetchInsecure = insecure;
     await Future<void>.delayed(const Duration(milliseconds: 50));
     if (!url.startsWith('http')) throw CoreException('bad url');
     final clash = url.endsWith('/clash');
@@ -86,6 +87,7 @@ class FakeBackend implements CoreBackend {
   /// Rules, tuning and port passed to the last start(), for tests.
   List<String>? lastRules;
   String? lastRouting; // routing template of the last start
+  bool? lastFetchInsecure;
   Map<String, dynamic>? lastTuning;
   int? lastPort;
 

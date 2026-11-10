@@ -63,6 +63,7 @@ Future<void> main(List<String> args) async {
   }
   await state.init();
   await state.attachRunningCore(); // after "exit, keep the core"
+  if (!state.isDemo) unawaited(state.syncPanels()); // new profiles from signed-in panels
 
   DesktopShell? desktop;
   if (DesktopShell.supported) {

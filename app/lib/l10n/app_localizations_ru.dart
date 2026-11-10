@@ -1043,4 +1043,152 @@ class SRu extends S {
 
   @override
   String get qrTorch => 'Фонарик';
+
+  @override
+  String get panelSignIn => 'Войти в панель';
+
+  @override
+  String get panelSignInTitle => 'Вход в панель SolaHelm';
+
+  @override
+  String get panelSignInHint =>
+      'Логин и пароль — те же, что от личного кабинета в панели. Все ваши профили добавятся подписками и будут обновляться сами.';
+
+  @override
+  String get panelUrl => 'Адрес панели';
+
+  @override
+  String get panelLogin => 'Логин';
+
+  @override
+  String get panelPassword => 'Пароль';
+
+  @override
+  String get panelPasswordNotKept =>
+      'Пароль не сохраняется: панель выдаёт приложению отдельный ключ, его можно отозвать в кабинете.';
+
+  @override
+  String panelSignedIn(int added) {
+    return 'Готово, добавлено подписок: $added';
+  }
+
+  @override
+  String get panelSignInBig => 'Войти в панель SolaHelm';
+
+  @override
+  String get panelSignInBigHint =>
+      'Или добавьте подписку по ссылке, из файла, из буфера или по QR';
+
+  @override
+  String get panelErrEmpty => 'Введите логин и пароль';
+
+  @override
+  String get panelErrBadUrl => 'Неверный адрес панели';
+
+  @override
+  String get panelErrInsecure =>
+      'Нужен адрес с https:// — пароль нельзя отправлять без шифрования';
+
+  @override
+  String get panelErrNetwork => 'Нет связи с панелью';
+
+  @override
+  String get panelErrNotPanel =>
+      'По этому адресу нет панели SolaHelm с входом для приложений (нужна версия 1.15 или новее)';
+
+  @override
+  String get panelErrCredentials => 'Неверный логин или пароль';
+
+  @override
+  String get panelErrRateLimited =>
+      'Слишком много попыток. Подождите 15 минут.';
+
+  @override
+  String get panelErrUnauthorized => 'Вход отозван — войдите заново';
+
+  @override
+  String panelErrOther(String code) {
+    return 'Панель ответила ошибкой: $code';
+  }
+
+  @override
+  String panelProfilesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count профилей',
+      few: '$count профиля',
+      one: '$count профиль',
+      zero: 'нет активных профилей',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panelNeedsLogin =>
+      'Вход отозван (сменили пароль или отключили приложение в кабинете). Войдите заново.';
+
+  @override
+  String get panelStateExpired => 'срок истёк';
+
+  @override
+  String get panelStateLimit => 'трафик исчерпан';
+
+  @override
+  String get panelStateOff => 'отключён';
+
+  @override
+  String get panelSynced => 'Профили обновлены';
+
+  @override
+  String get panelSignInAgain => 'Войти заново';
+
+  @override
+  String get panelSignOut => 'Выйти';
+
+  @override
+  String get panelSignOutTitle => 'Выйти из панели?';
+
+  @override
+  String panelSignOutText(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Приложение будет отключено в панели. Подписки из неё ($count) можно оставить — они продолжат работать.',
+      one: 'Приложение будет отключено в панели. Подписку из неё можно оставить — она продолжит работать.',
+      zero: 'Приложение будет отключено в панели.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get panelSignOutRemove => 'Выйти и удалить подписки';
+
+  @override
+  String get fromPanel => 'панель';
+
+  @override
+  String get panelErrNoUrl => 'Введите адрес панели';
+
+  @override
+  String get panelErrCertificate =>
+      'Сертификат панели не прошёл проверку. Если у панели самоподписанный сертификат и вы ей доверяете, отметьте галку ниже.';
+
+  @override
+  String get panelSelfSigned => 'У панели самоподписанный сертификат';
+
+  @override
+  String get panelSelfSignedHint =>
+      'Отмечайте, только если уверены, что это ваша панель: без проверки сертификата подменить её проще.';
+
+  @override
+  String get welcomeSignInTitle => 'Вход в панель SolaHelm';
+
+  @override
+  String get welcomeSignInText =>
+      'Если у вас есть аккаунт в панели SolaHelm — войдите, и все ваши подписки добавятся сами. Иначе подписку можно добавить позже по ссылке, из файла или по QR.';
+
+  @override
+  String get welcomeSignInSkip => 'Пропустить, добавлю подписку сам';
 }

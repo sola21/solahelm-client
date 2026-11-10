@@ -9,6 +9,7 @@ import 'screens/home.dart';
 import 'screens/logs.dart';
 import 'screens/rules.dart';
 import 'screens/nodes.dart';
+import 'screens/panel_login.dart';
 import 'screens/settings.dart';
 import 'screens/subscriptions.dart';
 import 'screens/welcome.dart';
@@ -95,8 +96,13 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final settings = AppScope.of(context).settings;
-    if (settings.uiMode == null) return WelcomeScreen(settings: settings);
+    final st = AppScope.of(context);
+    final settings = st.settings;
+    // First start: the interface mode, then (with nothing added yet) signing in to a panel.
+    if (settings.uiMode == null ||
+        (!settings.welcomeDone && st.subscriptions.isEmpty && st.panels.isEmpty)) {
+      return WelcomeScreen(settings: settings);
+    }
     final simple = settings.simple;
     return LayoutBuilder(builder: (context, c) {
       final wide = c.maxWidth >= Shell.wideBreakpoint;
@@ -129,14 +135,23 @@ class _ShellState extends State<Shell> {
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
                 child: Text(s.appTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
               ),
-              for (final x in shown)
-                _SideItem(
-                  icon: _meta(s, x).$2,
-                  label: _meta(s, x).$1,
-                  selected: x == section,
-                  onTap: () => setState(() => _section = x),
+              // The sections scroll in a short window; the account and status stay at the bottom.
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    for (final x in shown)
+                      _SideItem(
+                        icon: _meta(s, x).$2,
+                        label: _meta(s, x).$1,
+                        selected: x == section,
+                        onTap: () => setState(() => _section = x),
+                      ),
+                  ]),
                 ),
-              const Spacer(),
+              ),
+              const SizedBox(height: 8),
+              _SideAccount(onOpen: () => setState(() => _section = Section.subscriptions)),
+              const SizedBox(height: 8),
               const _SideStatus(),
             ]),
           ),
@@ -181,6 +196,46 @@ class _SideItem extends StatelessWidget {
 }
 
 /// Connection status pinned to the bottom of the sidebar.
+/// Bottom of the sidebar: "Sign in to a panel", or the signed-in login.
+class _SideAccount extends StatelessWidget {
+  const _SideAccount({required this.onOpen});
+  final VoidCallback onOpen; // shows the panel card (Subscriptions)
+
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final s = S.of(context);
+    final p = context.palette;
+    if (st.panels.isEmpty) {
+      return OutlinedButton.icon(
+        onPressed: () => showPanelLoginDialog(context, st),
+        icon: const Icon(Icons.login, size: 18),
+        label: Text(s.panelSignIn),
+      );
+    }
+    final acc = st.panels.first;
+    final who = acc.clientName.isNotEmpty ? acc.clientName : acc.login;
+    return Tooltip(
+      message: acc.needsLogin ? s.panelNeedsLogin : '${acc.panelName} · ${acc.host}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(children: [
+            Icon(acc.needsLogin ? Icons.no_accounts_outlined : Icons.account_circle_outlined,
+                size: 20, color: acc.needsLogin ? p.warning : Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(who, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+            if (st.panels.length > 1)
+              Text('+${st.panels.length - 1}', style: TextStyle(fontSize: 12, color: p.muted)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 class _SideStatus extends StatelessWidget {
   const _SideStatus();
 

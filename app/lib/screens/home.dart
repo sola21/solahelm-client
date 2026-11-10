@@ -7,6 +7,7 @@ import '../state/scope.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/exit_card.dart';
+import 'panel_login.dart';
 import 'connections.dart';
 import 'logs.dart';
 
@@ -70,6 +71,16 @@ class _NarrowHome extends StatelessWidget {
             style: TextStyle(fontSize: 13, color: p.muted),
           ),
         ),
+        if (st.subscriptions.isEmpty && st.panels.isEmpty) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: FilledButton.icon(
+              onPressed: () => showPanelLoginDialog(context, st),
+              icon: const Icon(Icons.login, size: 18),
+              label: Text(s.panelSignIn),
+            ),
+          ),
+        ],
         const SizedBox(height: 32),
         if (ExitCard.visible(st)) ...[ExitCard(st, big: simple), const SizedBox(height: 12)],
         Container(
