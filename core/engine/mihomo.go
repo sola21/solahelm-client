@@ -12,6 +12,9 @@ import (
 	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/hub/executor"
 	"github.com/metacubex/mihomo/hub/route"
+	"github.com/metacubex/mihomo/listener"
+	LC "github.com/metacubex/mihomo/listener/config"
+	"github.com/metacubex/mihomo/tunnel"
 	"github.com/metacubex/mihomo/tunnel/statistic"
 )
 
@@ -121,6 +124,11 @@ func (m *mihomoEngine) Stop() error {
 	m.started = false
 	// Close the API server, every listener (including TUN) and every live connection.
 	route.ReCreateServer(&route.Config{})
+	// Turn TUN off through ReCreateTun rather than only closing it: Shutdown
+	// closes the adapter but keeps LastTunConf, so the next start in this
+	// process (a reconnect after changing rules) saw "same TUN settings" and
+	// never created the adapter again: connected, but no traffic.
+	listener.ReCreateTun(LC.Tun{}, tunnel.Tunnel)
 	executor.Shutdown()
 	statistic.DefaultManager.Range(func(c statistic.Tracker) bool {
 		_ = c.Close()
