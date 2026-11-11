@@ -58,7 +58,7 @@ the VPN.
   minimized, a hotkey to toggle the VPN, exit while keeping the VPN on, auto-update, portable build.
 - **Android:** a quick-settings tile (VPN on/off without opening the app), a foldable notification.
 - **Settings on top of the profile:** TUN stack, strict route, MTU, networks that bypass the tunnel, system
-  proxy exceptions, port, LAN access, IPv6, log level, your own DNS servers.
+  proxy exceptions, port, LAN access, IPv6, log level, DNS mode.
 
 ## How it works
 
@@ -139,8 +139,15 @@ ports, PROCESS-*, RULE-SET, NETWORK, MATCH → final) and go in front of the pro
 sniff/hijack-dns service rules. The core checks the rules before they're saved.
 
 "Connection and TUN" and "Core" settings (`engine.Tuning`) apply to both cores on top of the profile; when
-changed while connected, a Reconnect button appears. Your own DNS servers (mihomo profiles only):
-`respect-rules`, remote resolvers through the VPN, direct ones for VPN servers and direct traffic.
+changed while connected, a Reconnect button appears. DNS mode (mihomo profiles and link subscriptions;
+sing-box profiles keep their own DNS), also on the main settings page in the simple interface:
+- **From the profile** — leave it as it is.
+- **Own, via the VPN** — `respect-rules`, remote resolvers through the VPN, direct ones for VPN servers and
+  direct traffic.
+- **Own, direct** — every query goes to your servers around the VPN.
+- **System** — every query goes to the OS / network resolvers (mihomo `system`) around the VPN.
+
+The last two show your ISP which sites you open.
 
 ## Building
 
@@ -202,7 +209,7 @@ next to it (or with `--dart-define=DEMO=true`) the app runs on demo data.
 ## Known issues
 
 - mihomo with the panel template's DNS settings (Cloudflare DoH + `prefer-h3`) sometimes answers slowly in
-  TUN on Windows. "Your own DNS servers" in the core settings helps.
+  TUN on Windows. The DNS mode "Own, via the VPN" helps.
 - mihomo keeps `cache.db` open until the process ends, so its working folder is permanent.
 - If a port from the config is taken by another client, mihomo carries on without that port.
 - The panel's sing-box JSON subscription has no Naive, the links do (mihomo skips them).

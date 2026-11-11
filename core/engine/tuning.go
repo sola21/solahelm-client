@@ -30,13 +30,50 @@ type Tuning struct {
 	DNS *DNSOverride `json:"dns,omitempty"`
 }
 
-// DNSOverride sets the resolvers of a mihomo profile. Queries follow the
-// routing rules (respect-rules), so Remote servers are reached through the
-// proxy the rules pick, and Direct servers resolve the proxy servers
-// themselves and direct traffic.
+// DNS modes of a DNSOverride.
+const (
+	// DNSModeVPN: Remote servers through the tunnel (queries follow the
+	// routing rules), Direct servers for the proxy servers and direct traffic.
+	DNSModeVPN = "vpn"
+	// DNSModeDirect: every query goes to the Direct servers, not through the VPN.
+	DNSModeDirect = "direct"
+	// DNSModeSystem: every query goes to the resolvers of the OS / network,
+	// not through the VPN (the core's own TUN DNS is excluded).
+	DNSModeSystem = "system"
+)
+
+// DNSOverride sets the resolvers of a mihomo profile.
 type DNSOverride struct {
-	Remote []string `json:"remote"` // e.g. https://1.1.1.1/dns-query
-	Direct []string `json:"direct"` // plain IPs, e.g. 77.88.8.8
+	Mode   string   `json:"mode,omitempty"` // "" = DNSModeVPN
+	Remote []string `json:"remote"`         // e.g. https://1.1.1.1/dns-query
+	Direct []string `json:"direct"`         // plain IPs, e.g. 77.88.8.8
+}
+
+func (d *DNSOverride) mode() string {
+	if d.Mode == "" {
+		return DNSModeVPN
+	}
+	return d.Mode
+}
+
+func (d *DNSOverride) validate() error {
+	if d == nil {
+		return nil
+	}
+	switch d.mode() {
+	case DNSModeVPN:
+		if len(d.Remote) == 0 || len(d.Direct) == 0 {
+			return fmt.Errorf("DNS through the VPN needs remote and direct servers")
+		}
+	case DNSModeDirect:
+		if len(d.Direct) == 0 {
+			return fmt.Errorf("direct DNS needs at least one server")
+		}
+	case DNSModeSystem:
+	default:
+		return fmt.Errorf("unknown DNS mode %q", d.Mode)
+	}
+	return nil
 }
 
 func (t *Tuning) parseExclude() ([]netip.Prefix, error) {
@@ -67,8 +104,10 @@ func (t *Tuning) validate() error {
 	if t.MTU != 0 && (t.MTU < 576 || t.MTU > 65535) {
 		return fmt.Errorf("MTU %d is out of range 576..65535", t.MTU)
 	}
-	_, err := t.parseExclude()
-	return err
+	if _, err := t.parseExclude(); err != nil {
+		return err
+	}
+	return t.DNS.validate()
 }
 
 // applyMihomoTuning changes the parsed mihomo config.
@@ -172,7 +211,7 @@ func applySingBoxTuning(o *option.Options, t *Tuning) {
 
 // injectMihomoDNS rewrites the dns section of a mihomo YAML config.
 func injectMihomoDNS(raw []byte, d *DNSOverride) ([]byte, error) {
-	if d == nil || len(d.Remote) == 0 || len(d.Direct) == 0 {
+	if d == nil || d.validate() != nil {
 		return raw, nil
 	}
 	var cfg map[string]any
@@ -185,13 +224,34 @@ func injectMihomoDNS(raw []byte, d *DNSOverride) ([]byte, error) {
 	}
 	dns["enable"] = true
 	dns["prefer-h3"] = false // HTTP/3 to public resolvers is often throttled; plain DoH is steadier
-	dns["respect-rules"] = true
-	dns["nameserver"] = d.Remote
-	dns["default-nameserver"] = d.Direct
-	dns["proxy-server-nameserver"] = d.Direct
-	dns["direct-nameserver"] = d.Direct
 	delete(dns, "fallback")
 	delete(dns, "fallback-filter")
+	switch d.mode() {
+	case DNSModeVPN:
+		dns["respect-rules"] = true
+		dns["nameserver"] = d.Remote
+		dns["default-nameserver"] = d.Direct
+		dns["proxy-server-nameserver"] = d.Direct
+		dns["direct-nameserver"] = d.Direct
+	case DNSModeDirect, DNSModeSystem:
+		servers := d.Direct
+		if d.mode() == DNSModeSystem {
+			servers = []string{"system"}
+		}
+		// Every query to these servers, around the VPN: no per-domain policies
+		// of the profile that would send some of them elsewhere.
+		dns["respect-rules"] = false
+		dns["nameserver"] = servers
+		dns["proxy-server-nameserver"] = servers
+		dns["direct-nameserver"] = servers
+		if len(d.Direct) > 0 {
+			dns["default-nameserver"] = d.Direct
+		} else {
+			delete(dns, "default-nameserver")
+		}
+		delete(dns, "nameserver-policy")
+		delete(dns, "direct-nameserver-follow-policy")
+	}
 	cfg["dns"] = dns
 	return yaml.Marshal(cfg)
 }

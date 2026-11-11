@@ -423,13 +423,8 @@ class CoreSettingsPage extends StatelessWidget {
         ],
       ]),
       _Section(s.secDns, [
-        SwitchListTile(
-          title: Text(s.dnsOverride),
-          subtitle: Text(s.dnsOverrideHint),
-          value: cs.dnsOverride,
-          onChanged: (v) => set(cs.copyWith(dnsOverride: v)),
-        ),
-        if (cs.dnsOverride) ...[
+        DnsModeTile(cs: cs, onChanged: (m) => set(cs.copyWith(dnsMode: m))),
+        if (cs.dnsMode == CoreSettings.dnsVpn) ...[
           const Divider(),
           ListTile(title: Text(s.dnsRemote)),
           _hint(context, s.dnsRemoteHint),
@@ -455,6 +450,20 @@ class CoreSettingsPage extends StatelessWidget {
             defaultsLabel: s.restoreDefaults,
           ),
         ],
+        if (cs.dnsMode == CoreSettings.dnsDirectMode) ...[
+          const Divider(),
+          ListTile(title: Text(s.dnsServers)),
+          _hint(context, s.dnsServersDirectHint),
+          _StringListEditor(
+            items: cs.dnsDirect,
+            onChanged: (v) => set(cs.copyWith(dnsDirect: v)),
+            addLabel: s.add,
+            hint: '77.88.8.8',
+            validate: (v) => _validResolver(v) ? null : s.invalidResolver,
+            defaults: CoreSettings.defaultDnsDirect,
+            defaultsLabel: s.restoreDefaults,
+          ),
+        ],
       ]),
       _Section(s.settingsAbout, [
         ListTile(
@@ -468,6 +477,54 @@ class CoreSettingsPage extends StatelessWidget {
         ),
         _hint(context, s.coresBuiltIn),
       ]),
+    ]);
+  }
+}
+
+
+/// The DNS mode of mihomo profiles: a drop-down and what the choice means.
+class DnsModeTile extends StatelessWidget {
+  const DnsModeTile({super.key, required this.cs, required this.onChanged, this.simple = false});
+  final CoreSettings cs;
+  final ValueChanged<String> onChanged;
+
+  /// Simple interface: the server lists aren't shown, say where they are not.
+  final bool simple;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final p = context.palette;
+    String label(String m) => switch (m) {
+          CoreSettings.dnsVpn => s.dnsModeVpn,
+          CoreSettings.dnsDirectMode => s.dnsModeDirect,
+          CoreSettings.dnsSystem => s.dnsModeSystem,
+          _ => s.dnsModeProfile,
+        };
+    final hint = switch (cs.dnsMode) {
+      CoreSettings.dnsVpn => s.dnsModeVpnHint,
+      CoreSettings.dnsDirectMode => s.dnsModeDirectHint,
+      CoreSettings.dnsSystem => s.dnsModeSystemHint,
+      _ => s.dnsModeProfileHint,
+    };
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+      ListTile(
+        title: Text(s.dnsMode),
+        trailing: DropdownButton<String>(
+          value: cs.dnsMode,
+          underline: const SizedBox.shrink(),
+          items: [for (final m in CoreSettings.dnsModes) DropdownMenuItem(value: m, child: Text(label(m)))],
+          onChanged: (v) => v == null ? null : onChanged(v),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Text(
+          [hint, if (simple && (cs.dnsMode == CoreSettings.dnsVpn || cs.dnsMode == CoreSettings.dnsDirectMode)) s.dnsServersWhere, s.dnsSingBoxNote]
+              .join(' '),
+          style: TextStyle(fontSize: 12, color: p.muted, height: 1.35),
+        ),
+      ),
     ]);
   }
 }

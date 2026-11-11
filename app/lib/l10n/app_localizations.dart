@@ -1573,18 +1573,6 @@ abstract class S {
   /// **'DNS'**
   String get secDns;
 
-  /// No description provided for @dnsOverride.
-  ///
-  /// In ru, this message translates to:
-  /// **'Свои DNS-серверы (профили mihomo)'**
-  String get dnsOverride;
-
-  /// No description provided for @dnsOverrideHint.
-  ///
-  /// In ru, this message translates to:
-  /// **'Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.'**
-  String get dnsOverrideHint;
-
   /// No description provided for @dnsRemote.
   ///
   /// In ru, this message translates to:
@@ -2154,6 +2142,84 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Пропустить, добавлю подписку сам'**
   String get welcomeSignInSkip;
+
+  /// No description provided for @dnsMode.
+  ///
+  /// In ru, this message translates to:
+  /// **'Режим DNS'**
+  String get dnsMode;
+
+  /// No description provided for @dnsModeProfile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из профиля'**
+  String get dnsModeProfile;
+
+  /// No description provided for @dnsModeVpn.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свои через VPN'**
+  String get dnsModeVpn;
+
+  /// No description provided for @dnsModeDirect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Свои напрямую'**
+  String get dnsModeDirect;
+
+  /// No description provided for @dnsModeSystem.
+  ///
+  /// In ru, this message translates to:
+  /// **'Системный'**
+  String get dnsModeSystem;
+
+  /// No description provided for @dnsModeProfileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'DNS берётся из подписки. Для подписок-ссылок это шифрованный DNS 1.1.1.1 и 8.8.8.8 через VPN.'**
+  String get dnsModeProfileHint;
+
+  /// No description provided for @dnsModeVpnHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Шифрованный DNS через VPN: провайдер не видит, какие сайты вы открываете. Выручает, если DNS профиля сбоит.'**
+  String get dnsModeVpnHint;
+
+  /// No description provided for @dnsModeDirectHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все запросы — на ваши серверы напрямую, мимо VPN (например, DNS провайдера или Яндекса). Провайдер видит, какие сайты вы открываете.'**
+  String get dnsModeDirectHint;
+
+  /// No description provided for @dnsModeSystemHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все запросы — на DNS, настроенный в системе или выданный сетью (Wi-Fi, роутер, провайдер), мимо VPN. Провайдер видит, какие сайты вы открываете.'**
+  String get dnsModeSystemHint;
+
+  /// No description provided for @dnsServersWhere.
+  ///
+  /// In ru, this message translates to:
+  /// **'Серверы меняются в расширенном режиме: Настройки → Ядро.'**
+  String get dnsServersWhere;
+
+  /// No description provided for @dnsSingBoxNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Профили sing-box всегда используют свой DNS.'**
+  String get dnsSingBoxNote;
+
+  /// No description provided for @dnsServers.
+  ///
+  /// In ru, this message translates to:
+  /// **'Серверы'**
+  String get dnsServers;
+
+  /// No description provided for @dnsServersDirectHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…'**
+  String get dnsServersDirectHint;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

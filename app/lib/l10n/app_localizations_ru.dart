@@ -846,13 +846,6 @@ class SRu extends S {
   String get secDns => 'DNS';
 
   @override
-  String get dnsOverride => 'Свои DNS-серверы (профили mihomo)';
-
-  @override
-  String get dnsOverrideHint =>
-      'Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.';
-
-  @override
   String get dnsRemote => 'Через VPN';
 
   @override
@@ -1191,4 +1184,49 @@ class SRu extends S {
 
   @override
   String get welcomeSignInSkip => 'Пропустить, добавлю подписку сам';
+
+  @override
+  String get dnsMode => 'Режим DNS';
+
+  @override
+  String get dnsModeProfile => 'Из профиля';
+
+  @override
+  String get dnsModeVpn => 'Свои через VPN';
+
+  @override
+  String get dnsModeDirect => 'Свои напрямую';
+
+  @override
+  String get dnsModeSystem => 'Системный';
+
+  @override
+  String get dnsModeProfileHint =>
+      'DNS берётся из подписки. Для подписок-ссылок это шифрованный DNS 1.1.1.1 и 8.8.8.8 через VPN.';
+
+  @override
+  String get dnsModeVpnHint =>
+      'Шифрованный DNS через VPN: провайдер не видит, какие сайты вы открываете. Выручает, если DNS профиля сбоит.';
+
+  @override
+  String get dnsModeDirectHint =>
+      'Все запросы — на ваши серверы напрямую, мимо VPN (например, DNS провайдера или Яндекса). Провайдер видит, какие сайты вы открываете.';
+
+  @override
+  String get dnsModeSystemHint =>
+      'Все запросы — на DNS, настроенный в системе или выданный сетью (Wi-Fi, роутер, провайдер), мимо VPN. Провайдер видит, какие сайты вы открываете.';
+
+  @override
+  String get dnsServersWhere =>
+      'Серверы меняются в расширенном режиме: Настройки → Ядро.';
+
+  @override
+  String get dnsSingBoxNote => 'Профили sing-box всегда используют свой DNS.';
+
+  @override
+  String get dnsServers => 'Серверы';
+
+  @override
+  String get dnsServersDirectHint =>
+      'Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…';
 }

@@ -154,7 +154,7 @@ void main() {
   });
 
   testWidgets('sidebar: a sign-in button, then the signed-in name', (t) async {
-    final (st, _) = await pumpSubs(t);
+    await pumpSubs(t);
     expect(find.widgetWithText(OutlinedButton, 'Войти в панель'), findsOneWidget);
     await t.tap(find.widgetWithText(OutlinedButton, 'Войти в панель'));
     await t.pumpAndSettle();

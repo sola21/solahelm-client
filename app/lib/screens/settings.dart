@@ -14,7 +14,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.3.1';
+const appVersion = '0.3.2';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 const repoUrl = 'https://github.com/sola21/solahelm-client';
@@ -99,6 +99,14 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(s.routingHint, style: TextStyle(fontSize: 12, color: p.muted, height: 1.4)),
+        label(s.secDns),
+        Card(
+          child: DnsModeTile(
+            cs: settings.core,
+            simple: settings.simple,
+            onChanged: (m) => settings.setCore(settings.core.copyWith(dnsMode: m)),
+          ),
+        ),
         label(s.settingsExit),
         Card(
           child: SwitchListTile(

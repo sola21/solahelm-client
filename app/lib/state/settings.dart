@@ -60,7 +60,7 @@ class CoreSettings {
     this.ipv6 = 'profile',
     this.logLevel = '',
     this.findProcess = true,
-    this.dnsOverride = false,
+    this.dnsMode = dnsProfile,
     this.dnsRemote = defaultDnsRemote,
     this.dnsDirect = defaultDnsDirect,
     this.linkRouting = routingRuDirect,
@@ -92,7 +92,12 @@ class CoreSettings {
   final String ipv6; // profile, on, off
   final String logLevel; // '' = profile, debug, info, warning, error, silent
   final bool findProcess;
-  final bool dnsOverride; // replace a mihomo profile's DNS
+  /// DNS of mihomo profiles (and link subscriptions): dnsProfile keeps the
+  /// profile's; dnsVpn = own servers through the VPN; dnsDirect = own servers
+  /// around the VPN; dnsSystem = the OS / network resolvers around the VPN.
+  final String dnsMode;
+  static const dnsProfile = 'profile', dnsVpn = 'vpn', dnsDirectMode = 'direct', dnsSystem = 'system';
+  static const dnsModes = [dnsProfile, dnsVpn, dnsDirectMode, dnsSystem];
   final List<String> dnsRemote; // through the tunnel (respect-rules)
   final List<String> dnsDirect; // for proxy servers and direct traffic
   final String linkRouting; // routingAll or routingRuDirect
@@ -109,7 +114,7 @@ class CoreSettings {
     String? ipv6,
     String? logLevel,
     bool? findProcess,
-    bool? dnsOverride,
+    String? dnsMode,
     List<String>? dnsRemote,
     List<String>? dnsDirect,
     String? linkRouting,
@@ -126,7 +131,7 @@ class CoreSettings {
         ipv6: ipv6 ?? this.ipv6,
         logLevel: logLevel ?? this.logLevel,
         findProcess: findProcess ?? this.findProcess,
-        dnsOverride: dnsOverride ?? this.dnsOverride,
+        dnsMode: dnsMode ?? this.dnsMode,
         dnsRemote: dnsRemote ?? this.dnsRemote,
         dnsDirect: dnsDirect ?? this.dnsDirect,
         linkRouting: linkRouting ?? this.linkRouting,
@@ -142,8 +147,12 @@ class CoreSettings {
         if (ipv6 != 'profile') 'ipv6': ipv6 == 'on',
         if (logLevel.isNotEmpty) 'logLevel': logLevel,
         if (allowLan) 'allowLan': true,
-        if (dnsOverride && dnsRemote.isNotEmpty && dnsDirect.isNotEmpty)
-          'dns': {'remote': dnsRemote, 'direct': dnsDirect},
+        if (dnsMode == dnsVpn && dnsRemote.isNotEmpty && dnsDirect.isNotEmpty)
+          'dns': {'mode': dnsVpn, 'remote': dnsRemote, 'direct': dnsDirect}
+        else if (dnsMode == dnsDirectMode && dnsDirect.isNotEmpty)
+          'dns': {'mode': dnsDirectMode, 'remote': const <String>[], 'direct': dnsDirect}
+        else if (dnsMode == dnsSystem)
+          'dns': {'mode': dnsSystem, 'remote': const <String>[], 'direct': dnsDirect},
       };
 
   Map<String, dynamic> toJson() => {
@@ -158,7 +167,7 @@ class CoreSettings {
         'ipv6': ipv6,
         'logLevel': logLevel,
         'findProcess': findProcess,
-        'dnsOverride': dnsOverride,
+        'dnsMode': dnsMode,
         'dnsRemote': dnsRemote,
         'dnsDirect': dnsDirect,
         'linkRouting': linkRouting,
@@ -183,7 +192,10 @@ class CoreSettings {
       ipv6: const ['profile', 'on', 'off'].contains(ip6) ? ip6 as String : d.ipv6,
       logLevel: const ['', 'debug', 'info', 'warning', 'error', 'silent'].contains(log) ? log as String : d.logLevel,
       findProcess: v['findProcess'] as bool? ?? d.findProcess,
-      dnsOverride: v['dnsOverride'] as bool? ?? d.dnsOverride,
+      // 0.3.1 and older had a single switch: on = own servers through the VPN.
+      dnsMode: dnsModes.contains(v['dnsMode'])
+          ? v['dnsMode'] as String
+          : (v['dnsOverride'] == true ? dnsVpn : d.dnsMode),
       dnsRemote: list(v['dnsRemote']) ?? d.dnsRemote,
       dnsDirect: list(v['dnsDirect']) ?? d.dnsDirect,
       linkRouting: const [routingAll, routingRuDirect].contains(v['linkRouting']) ? v['linkRouting'] as String : d.linkRouting,

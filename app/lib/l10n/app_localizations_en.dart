@@ -844,13 +844,6 @@ class SEn extends S {
   String get secDns => 'DNS';
 
   @override
-  String get dnsOverride => 'Own DNS servers (mihomo profiles)';
-
-  @override
-  String get dnsOverrideHint =>
-      'Replaces the profile\'s DNS: queries go through the VPN by the rules, your ISP doesn\'t see them. The first lookup is a bit slower. Turn on if the profile\'s DNS misbehaves. sing-box profiles are not affected.';
-
-  @override
   String get dnsRemote => 'Through the VPN';
 
   @override
@@ -1188,4 +1181,49 @@ class SEn extends S {
 
   @override
   String get welcomeSignInSkip => 'Skip, I\'ll add a subscription myself';
+
+  @override
+  String get dnsMode => 'DNS mode';
+
+  @override
+  String get dnsModeProfile => 'From the profile';
+
+  @override
+  String get dnsModeVpn => 'Own, via the VPN';
+
+  @override
+  String get dnsModeDirect => 'Own, direct';
+
+  @override
+  String get dnsModeSystem => 'System';
+
+  @override
+  String get dnsModeProfileHint =>
+      'DNS comes from the subscription. For link subscriptions that is encrypted DNS 1.1.1.1 and 8.8.8.8 through the VPN.';
+
+  @override
+  String get dnsModeVpnHint =>
+      'Encrypted DNS through the VPN: your ISP can\'t see which sites you open. Helps when the profile\'s DNS misbehaves.';
+
+  @override
+  String get dnsModeDirectHint =>
+      'Every query goes straight to your servers, around the VPN (for example your ISP\'s DNS). Your ISP can see which sites you open.';
+
+  @override
+  String get dnsModeSystemHint =>
+      'Every query goes to the DNS set in the system or given by the network (Wi-Fi, router, ISP), around the VPN. Your ISP can see which sites you open.';
+
+  @override
+  String get dnsServersWhere =>
+      'The servers are set in the advanced interface: Settings → Core.';
+
+  @override
+  String get dnsSingBoxNote => 'sing-box profiles always use their own DNS.';
+
+  @override
+  String get dnsServers => 'Servers';
+
+  @override
+  String get dnsServersDirectHint =>
+      'For every name, around the VPN. Plain IP addresses or encrypted DNS: https://…, tls://…';
 }

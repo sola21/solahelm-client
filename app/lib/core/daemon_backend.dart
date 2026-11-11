@@ -492,7 +492,11 @@ class DaemonBackend implements CoreBackend {
         download: (cm['download'] as num?)?.toInt() ?? 0,
         start: DateTime.tryParse(str(cm['start']))?.toLocal(),
         processPath: str(meta['processPath']),
-        process: str(meta['process']),
+        // The core's own connections (DNS over HTTPS, latency tests, rule-set
+        // downloads) have no process: name them instead of showing "?".
+        process: str(meta['process']).isEmpty && str(meta['type']).toLowerCase() == 'inner'
+            ? 'SolaHelm core'
+            : str(meta['process']),
         remote: str(meta['remoteDestination']),
       ));
     }

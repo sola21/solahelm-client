@@ -94,7 +94,7 @@ type runFlags struct {
 	proxyOnly, loopback                       *bool
 	port                                      *int
 	tunStack                                  *string
-	dnsRemote, dnsDirect                      *string
+	dnsMode, dnsRemote, dnsDirect             *string
 	routing                                   *string
 }
 
@@ -109,6 +109,7 @@ func addRunFlags(fs *flag.FlagSet, proxyOnlyDefault bool, controllerDefault stri
 		port:       fs.Int("port", portDefault, "local mixed port (0: keep config value)"),
 		loopback:   fs.Bool("loopback", proxyOnlyDefault, "listen on 127.0.0.1 only, no allow-lan (keeps TUN)"),
 		tunStack:   fs.String("tun-stack", "", "override TUN stack: gvisor, system or mixed"),
+		dnsMode:    fs.String("dns-mode", "", "mihomo: replace DNS: vpn (needs -dns-remote, -dns-direct), direct (needs -dns-direct) or system"),
 		dnsRemote:  fs.String("dns-remote", "", "mihomo: replace DNS, comma list of remote resolvers (needs -dns-direct)"),
 		dnsDirect:  fs.String("dns-direct", "", "mihomo: plain resolvers for proxy servers and direct traffic"),
 		routing:    fs.String("routing", "all", "links only: routing template, all or ru-direct"),
@@ -139,10 +140,15 @@ func start(m *engine.Manager, f runFlags, src string) engine.Kind {
 		fatal(fmt.Errorf("unknown core %q", *f.core))
 	}
 	var tuning *engine.Tuning
-	if *f.dnsRemote != "" && *f.dnsDirect != "" {
-		tuning = &engine.Tuning{DNS: &engine.DNSOverride{
-			Remote: strings.Split(*f.dnsRemote, ","), Direct: strings.Split(*f.dnsDirect, ","),
-		}}
+	if *f.dnsMode != "" || (*f.dnsRemote != "" && *f.dnsDirect != "") {
+		d := &engine.DNSOverride{Mode: *f.dnsMode}
+		if *f.dnsRemote != "" {
+			d.Remote = strings.Split(*f.dnsRemote, ",")
+		}
+		if *f.dnsDirect != "" {
+			d.Direct = strings.Split(*f.dnsDirect, ",")
+		}
+		tuning = &engine.Tuning{DNS: d}
 	}
 	err := m.Start(kind, body, engine.Options{
 		Tuning:       tuning,

@@ -499,8 +499,6 @@
     }
   },
   "secDns": "DNS",
-  "dnsOverride": "Свои DNS-серверы (профили mihomo)",
-  "dnsOverrideHint": "Заменяет DNS профиля: запросы идут через VPN по правилам, провайдер их не видит. Первое разрешение имени чуть медленнее. Включайте, если DNS профиля сбоит. Профили sing-box не затрагиваются.",
   "dnsRemote": "Через VPN",
   "dnsRemoteHint": "Для всех имён. Шифрованный DNS: https://…, tls://…",
   "dnsDirect": "Напрямую",
@@ -574,7 +572,13 @@
   "qrImageFile": "Из картинки",
   "qrNotFound": "QR-код не найден",
   "qrName": "QR {date}",
-  "@qrName": {"placeholders": {"date": {"type": "String"}}},
+  "@qrName": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "qrCameraTitle": "Наведите на QR-код",
   "qrCameraHint": "QR со ссылкой на подписку или на сервер",
   "qrCameraDenied": "Нет доступа к камере. Разрешите его в настройках Android.",
@@ -588,7 +592,13 @@
   "panelPassword": "Пароль",
   "panelPasswordNotKept": "Пароль не сохраняется: панель выдаёт приложению отдельный ключ, его можно отозвать в кабинете.",
   "panelSignedIn": "Готово, добавлено подписок: {added}",
-  "@panelSignedIn": {"placeholders": {"added": {"type": "int"}}},
+  "@panelSignedIn": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      }
+    }
+  },
   "panelSignInBig": "Войти в панель SolaHelm",
   "panelSignInBigHint": "Или добавьте подписку по ссылке, из файла, из буфера или по QR",
   "panelErrEmpty": "Введите логин и пароль",
@@ -600,9 +610,21 @@
   "panelErrRateLimited": "Слишком много попыток. Подождите 15 минут.",
   "panelErrUnauthorized": "Вход отозван — войдите заново",
   "panelErrOther": "Панель ответила ошибкой: {code}",
-  "@panelErrOther": {"placeholders": {"code": {"type": "String"}}},
+  "@panelErrOther": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "panelProfilesCount": "{count, plural, =0{нет активных профилей} one{{count} профиль} few{{count} профиля} other{{count} профилей}}",
-  "@panelProfilesCount": {"placeholders": {"count": {"type": "int"}}},
+  "@panelProfilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "panelNeedsLogin": "Вход отозван (сменили пароль или отключили приложение в кабинете). Войдите заново.",
   "panelStateExpired": "срок истёк",
   "panelStateLimit": "трафик исчерпан",
@@ -612,7 +634,13 @@
   "panelSignOut": "Выйти",
   "panelSignOutTitle": "Выйти из панели?",
   "panelSignOutText": "{count, plural, =0{Приложение будет отключено в панели.} one{Приложение будет отключено в панели. Подписку из неё можно оставить — она продолжит работать.} other{Приложение будет отключено в панели. Подписки из неё ({count}) можно оставить — они продолжат работать.}}",
-  "@panelSignOutText": {"placeholders": {"count": {"type": "int"}}},
+  "@panelSignOutText": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "panelSignOutRemove": "Выйти и удалить подписки",
   "fromPanel": "панель",
   "panelErrNoUrl": "Введите адрес панели",
@@ -621,5 +649,18 @@
   "panelSelfSignedHint": "Отмечайте, только если уверены, что это ваша панель: без проверки сертификата подменить её проще.",
   "welcomeSignInTitle": "Вход в панель SolaHelm",
   "welcomeSignInText": "Если у вас есть аккаунт в панели SolaHelm — войдите, и все ваши подписки добавятся сами. Иначе подписку можно добавить позже по ссылке, из файла или по QR.",
-  "welcomeSignInSkip": "Пропустить, добавлю подписку сам"
+  "welcomeSignInSkip": "Пропустить, добавлю подписку сам",
+  "dnsMode": "Режим DNS",
+  "dnsModeProfile": "Из профиля",
+  "dnsModeVpn": "Свои через VPN",
+  "dnsModeDirect": "Свои напрямую",
+  "dnsModeSystem": "Системный",
+  "dnsModeProfileHint": "DNS берётся из подписки. Для подписок-ссылок это шифрованный DNS 1.1.1.1 и 8.8.8.8 через VPN.",
+  "dnsModeVpnHint": "Шифрованный DNS через VPN: провайдер не видит, какие сайты вы открываете. Выручает, если DNS профиля сбоит.",
+  "dnsModeDirectHint": "Все запросы — на ваши серверы напрямую, мимо VPN (например, DNS провайдера или Яндекса). Провайдер видит, какие сайты вы открываете.",
+  "dnsModeSystemHint": "Все запросы — на DNS, настроенный в системе или выданный сетью (Wi-Fi, роутер, провайдер), мимо VPN. Провайдер видит, какие сайты вы открываете.",
+  "dnsServersWhere": "Серверы меняются в расширенном режиме: Настройки → Ядро.",
+  "dnsSingBoxNote": "Профили sing-box всегда используют свой DNS.",
+  "dnsServers": "Серверы",
+  "dnsServersDirectHint": "Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…"
 }

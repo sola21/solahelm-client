@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"github.com/metacubex/mihomo/config"
 	"net/netip"
 	"testing"
 
@@ -87,5 +88,45 @@ func TestMihomoDNSOverride(t *testing.T) {
 	}
 	if d.NameServer[0].ProxyName == "" {
 		t.Fatal("remote DNS should follow the rules (respect-rules)")
+	}
+}
+
+func TestMihomoDNSModes(t *testing.T) {
+	raw := []byte("dns:\n  enable: true\n  enhanced-mode: fake-ip\n  respect-rules: true\n" +
+		"  nameserver: ['https://1.1.1.1/dns-query#Proxy']\n  nameserver-policy:\n    '+.example.com': ['https://8.8.8.8/dns-query']\n" +
+		"proxies: []\nproxy-groups:\n  - {name: Proxy, type: select, proxies: [DIRECT]}\nrules:\n  - MATCH,Proxy\n")
+	parse := func(d *DNSOverride) *config.Config {
+		t.Helper()
+		out, err := injectMihomoDNS(raw, d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := executor.ParseWithBytes(out)
+		if err != nil {
+			t.Fatalf("%s: %v", d.Mode, err)
+		}
+		return cfg
+	}
+
+	// Direct: the user's servers, not through the VPN, no per-domain policy of the profile.
+	c := parse(&DNSOverride{Mode: DNSModeDirect, Direct: []string{"77.88.8.8", "1.1.1.1"}})
+	if len(c.DNS.NameServer) != 2 || c.DNS.NameServer[0].ProxyName != "" || c.DNS.NameServer[0].Addr != "77.88.8.8:53" {
+		t.Fatalf("direct: %+v", c.DNS.NameServer)
+	}
+	if len(c.DNS.NameServerPolicy) != 0 {
+		t.Fatalf("direct: the profile's nameserver-policy should be dropped: %+v", c.DNS.NameServerPolicy)
+	}
+
+	// System: the OS resolvers.
+	c = parse(&DNSOverride{Mode: DNSModeSystem})
+	if len(c.DNS.NameServer) != 1 || c.DNS.NameServer[0].Net != "system" || c.DNS.NameServer[0].ProxyName != "" {
+		t.Fatalf("system: %+v", c.DNS.NameServer)
+	}
+
+	// Invalid settings are refused up front and never half-applied.
+	for _, bad := range []*DNSOverride{{Mode: "bogus"}, {Mode: DNSModeDirect}, {Mode: DNSModeVPN, Direct: []string{"1.1.1.1"}}} {
+		if (&Tuning{DNS: bad}).validate() == nil {
+			t.Fatalf("accepted %+v", bad)
+		}
 	}
 }
