@@ -1229,4 +1229,7 @@ class SRu extends S {
   @override
   String get dnsServersDirectHint =>
       'Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…';
+
+  @override
+  String get panelSignInAnother => 'Войти в другую панель';
 }

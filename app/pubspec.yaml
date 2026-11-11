@@ -2,7 +2,7 @@ name: solahelm_client
 description: "SolaHelm client: sing-box and mihomo in one app"
 publish_to: 'none'
 
-version: 0.3.2+10
+version: 0.3.3+11
 
 environment:
   sdk: ^3.13.7

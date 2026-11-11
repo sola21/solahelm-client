@@ -395,5 +395,6 @@
   "dnsServersWhere": "The servers are set in the advanced interface: Settings → Core.",
   "dnsSingBoxNote": "sing-box profiles always use their own DNS.",
   "dnsServers": "Servers",
-  "dnsServersDirectHint": "For every name, around the VPN. Plain IP addresses or encrypted DNS: https://…, tls://…"
+  "dnsServersDirectHint": "For every name, around the VPN. Plain IP addresses or encrypted DNS: https://…, tls://…",
+  "panelSignInAnother": "Sign in to another panel"
 }

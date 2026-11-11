@@ -36,11 +36,12 @@ class SubscriptionsScreen extends StatelessWidget {
                 padding: EdgeInsets.only(right: 8),
                 child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
               ),
-            IconButton(
-              tooltip: s.panelSignIn,
-              icon: const Icon(Icons.login),
-              onPressed: () => showPanelLoginDialog(context, st),
-            ),
+            if (st.panels.isEmpty)
+              IconButton(
+                tooltip: s.panelSignIn,
+                icon: const Icon(Icons.login),
+                onPressed: () => showPanelLoginDialog(context, st),
+              ),
             IconButton(
               tooltip: s.addSubscription,
               icon: const Icon(Icons.add),
@@ -508,12 +509,15 @@ class _PanelCard extends StatelessWidget {
               'refresh' => _refresh(context),
               'login' => showPanelLoginDialog(context, state, url: acc.url, login: acc.login, selfSigned: acc.insecure),
               'logout' => _logout(context),
+              'another' => showPanelLoginDialog(context, state),
               _ => null,
             },
             itemBuilder: (_) => [
               if (!acc.needsLogin) PopupMenuItem(value: 'refresh', child: Text(s.refresh)),
               PopupMenuItem(value: 'login', child: Text(s.panelSignInAgain)),
               PopupMenuItem(value: 'logout', child: Text(s.panelSignOut)),
+              const PopupMenuDivider(),
+              PopupMenuItem(value: 'another', child: Text(s.panelSignInAnother)),
             ],
           ),
         ]),

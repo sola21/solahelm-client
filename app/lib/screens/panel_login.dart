@@ -5,7 +5,19 @@ import '../state/app_state.dart';
 import '../theme.dart';
 
 /// What the address field shows as an example.
-const panelUrlExample = 'https://panel.example.org/hy/';
+const panelUrlExample = 'panel.example.org/hy/';
+
+/// Address schemes the field offers; https:// first (http:// is for a panel on this device).
+const panelSchemes = ['https://', 'http://'];
+
+/// Splits an address into the scheme from [panelSchemes] and the rest.
+(String, String) splitPanelUrl(String url) {
+  final t = url.trim();
+  for (final sc in panelSchemes) {
+    if (t.toLowerCase().startsWith(sc)) return (sc, t.substring(sc.length));
+  }
+  return (panelSchemes.first, t);
+}
 
 /// Text for a PanelException code (see PanelApi).
 String panelError(S s, String code) => switch (code) {
@@ -46,13 +58,23 @@ class _PanelLoginDialog extends StatefulWidget {
 }
 
 class _PanelLoginDialogState extends State<_PanelLoginDialog> {
-  late final _url = TextEditingController(text: widget.url);
+  late String _scheme = splitPanelUrl(widget.url).$1;
+  late final _url = TextEditingController(text: splitPanelUrl(widget.url).$2);
   late final _login = TextEditingController(text: widget.login);
   final _password = TextEditingController();
   late bool _selfSigned = widget.selfSigned;
   bool _busy = false;
   bool _hide = true;
   String? _error;
+
+  /// A pasted full address: take its scheme into the list.
+  void _onUrlChanged(String v) {
+    if (!v.contains('://')) return;
+    final (sc, rest) = splitPanelUrl(v);
+    if (!v.trim().toLowerCase().startsWith(sc)) return; // some other scheme: let the check report it
+    setState(() => _scheme = sc);
+    _url.value = TextEditingValue(text: rest, selection: TextSelection.collapsed(offset: rest.length));
+  }
 
   @override
   void dispose() {
@@ -77,7 +99,9 @@ class _PanelLoginDialogState extends State<_PanelLoginDialog> {
       _error = null;
     });
     final before = widget.state.subscriptions.length;
-    final err = await widget.state.loginPanel(_url.text, _login.text, _password.text, selfSigned: _selfSigned);
+    final rest = _url.text.trim();
+    final url = rest.contains('://') ? rest : '$_scheme$rest';
+    final err = await widget.state.loginPanel(url, _login.text, _password.text, selfSigned: _selfSigned);
     if (!mounted) return;
     if (err != null) {
       setState(() {
@@ -107,10 +131,23 @@ class _PanelLoginDialogState extends State<_PanelLoginDialog> {
                 enabled: !_busy,
                 keyboardType: TextInputType.url,
                 autocorrect: false,
+                onChanged: _onUrlChanged,
                 decoration: InputDecoration(
                   labelText: s.panelUrl,
                   hintText: panelUrlExample,
-                  prefixIcon: const Icon(Icons.dns_outlined),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 0),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 4),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        key: const ValueKey('panelScheme'),
+                        value: _scheme,
+                        isDense: true,
+                        items: [for (final sc in panelSchemes) DropdownMenuItem(value: sc, child: Text(sc))],
+                        onChanged: _busy ? null : (v) => setState(() => _scheme = v ?? _scheme),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

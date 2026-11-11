@@ -2220,6 +2220,12 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…'**
   String get dnsServersDirectHint;
+
+  /// No description provided for @panelSignInAnother.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в другую панель'**
+  String get panelSignInAnother;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

@@ -1226,4 +1226,7 @@ class SEn extends S {
   @override
   String get dnsServersDirectHint =>
       'For every name, around the VPN. Plain IP addresses or encrypted DNS: https://…, tls://…';
+
+  @override
+  String get panelSignInAnother => 'Sign in to another panel';
 }

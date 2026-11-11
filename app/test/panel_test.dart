@@ -86,10 +86,12 @@ void main() {
 
   testWidgets('sign in: active profiles become subscriptions, inactive ones are shown', (t) async {
     final (st, api) = await pumpSubs(t);
+    expect(find.byTooltip('Войти в панель'), findsOneWidget); // header icon while signed out
     await t.tap(find.text('Войти в панель SolaHelm'));
     await t.pumpAndSettle();
-    // No panel address is filled in: only an example as a hint.
-    expect(find.text('https://panel.example.org/hy/'), findsOneWidget);
+    // No panel address is filled in: only an example as a hint, https:// picked.
+    expect(find.text('panel.example.org/hy/'), findsOneWidget);
+    expect(find.text('https://'), findsOneWidget);
     expect(st.panels, isEmpty);
 
     await signIn(t, 'wrong');
@@ -105,6 +107,51 @@ void main() {
     expect(find.text('SolaHelm · Test One'), findsOneWidget);
     expect(find.text('beta: срок истёк'), findsOneWidget);
     expect(find.text('панель'), findsOneWidget); // badge on the subscription card
+    // Signed in: no sign-in icon in the header; another panel is in the card's menu.
+    expect(find.byTooltip('Войти в панель'), findsNothing);
+    await t.tap(find.byIcon(Icons.more_vert).first);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Войти в другую панель'));
+    await t.pumpAndSettle();
+    expect(find.text('Вход в панель SolaHelm'), findsOneWidget);
+    expect(find.text('panel.example.org/hy/'), findsOneWidget); // empty field, the hint again
+  });
+
+  testWidgets('address field: the scheme is a list; a pasted address fills it', (t) async {
+    final (_, api) = await pumpSubs(t);
+    await t.tap(find.text('Войти в панель SolaHelm'));
+    await t.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await t.enterText(fields.at(0), 'http://127.0.0.1:8088/hy/');
+    await t.pumpAndSettle();
+    expect(find.text('http://'), findsOneWidget);
+    expect(t.widget<TextField>(fields.at(0)).controller!.text, '127.0.0.1:8088/hy/');
+    await t.enterText(fields.at(1), 'test1');
+    await t.enterText(fields.at(2), 'secret');
+    await t.tap(find.widgetWithText(FilledButton, 'Войти в панель').last);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await t.pumpAndSettle();
+    expect(api.calls.first, 'login http://127.0.0.1:8088/hy test1');
+  });
+
+  testWidgets('address field: picking https:// / http:// from the list', (t) async {
+    final (_, api) = await pumpSubs(t);
+    await t.tap(find.text('Войти в панель SolaHelm'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('panelScheme')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('http://').last);
+    await t.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await t.enterText(fields.at(0), 'panel.example.org/hy');
+    await t.enterText(fields.at(1), 'test1');
+    await t.enterText(fields.at(2), 'secret');
+    await t.tap(find.widgetWithText(FilledButton, 'Войти в панель').last);
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await t.pumpAndSettle();
+    // Plain http to another computer is refused: the password would go unencrypted.
+    expect(api.calls, isEmpty);
+    expect(find.textContaining('пароль нельзя отправлять без шифрования'), findsOneWidget);
   });
 
   testWidgets('sync adds new profiles, follows a re-issued link; a revoked token asks to sign in again', (t) async {

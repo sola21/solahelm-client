@@ -662,5 +662,6 @@
   "dnsServersWhere": "Серверы меняются в расширенном режиме: Настройки → Ядро.",
   "dnsSingBoxNote": "Профили sing-box всегда используют свой DNS.",
   "dnsServers": "Серверы",
-  "dnsServersDirectHint": "Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…"
+  "dnsServersDirectHint": "Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…",
+  "panelSignInAnother": "Войти в другую панель"
 }
