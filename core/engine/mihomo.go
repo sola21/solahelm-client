@@ -26,6 +26,7 @@ import (
 // file stays locked until the process exits. Use one fixed WorkDir per process.
 type mihomoEngine struct {
 	started bool
+	naive   *naiveBridge // naive proxies of the config, run by sing-box
 }
 
 func (m *mihomoEngine) Kind() Kind { return Mihomo }
@@ -110,6 +111,17 @@ func (m *mihomoEngine) Start(raw []byte, opts Options) error {
 			return err
 		}
 	}
+	raw, bridge, err := rewriteNaive(raw, true)
+	if err != nil {
+		return err
+	}
+	if bridge != nil {
+		// Before mihomo: its first latency tests already go through the bridge.
+		if err := bridge.start(opts.WorkDir); err != nil {
+			return err
+		}
+		m.naive = bridge
+	}
 	if err := hub.Parse(raw, hubOpts...); err != nil {
 		return err
 	}
@@ -118,6 +130,8 @@ func (m *mihomoEngine) Start(raw []byte, opts Options) error {
 }
 
 func (m *mihomoEngine) Stop() error {
+	m.naive.stop() // also after a failed start
+	m.naive = nil
 	if !m.started {
 		return nil
 	}

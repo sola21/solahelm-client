@@ -9,6 +9,6 @@ MH=$(go list -m -f '{{.Version}}' github.com/metacubex/mihomo); MH=${MH#v}
 mkdir -p ../app/android/app/libs
 gomobile bind -target=android/arm64,android/amd64 -androidapi 24 -javapkg io.github.sola21.core \
   -ldflags "-s -w -X github.com/sagernet/sing-box/constant.Version=$SB -X github.com/metacubex/mihomo/constant.Version=$MH" \
-  -tags cmfa,with_quic,with_utls,with_clash_api,with_gvisor,with_wireguard \
+  -tags cmfa,with_quic,with_utls,with_clash_api,with_gvisor,with_wireguard,with_naive_outbound \
   -o ../app/android/app/libs/solahelm-core.aar ./mobile
 echo "built ../app/android/app/libs/solahelm-core.aar (sing-box $SB, mihomo $MH)"

@@ -24,6 +24,7 @@ if (-not $SkipBuild) {
 
 $release = Join-Path $app 'build\windows\x64\runner\Release'
 if (-not (Test-Path (Join-Path $release 'solahelm-core.exe'))) { throw "solahelm-core.exe is missing in $release" }
+if (-not (Test-Path (Join-Path $release 'libcronet.dll'))) { throw "libcronet.dll (NaiveProxy) is missing in $release" }
 
 New-Item -ItemType Directory -Force $dist | Out-Null
 $name = "SolaHelm-$version-windows-x64"

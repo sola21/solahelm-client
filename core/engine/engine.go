@@ -125,6 +125,17 @@ func (m *Manager) Stop() error {
 	return err
 }
 
+// NaiveNodes lists the proxies of the running config that go through the
+// naive bridge (mihomo shows them as SOCKS5).
+func (m *Manager) NaiveNodes() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if e, ok := m.current.(*mihomoEngine); ok {
+		return e.naive.Names()
+	}
+	return nil
+}
+
 // Running reports the kind of the running core, or "" when idle.
 func (m *Manager) Running() Kind {
 	m.mu.Lock()

@@ -3,8 +3,9 @@
 // mihomo config: proxies, a manual and an automatic group, DNS, TUN, rules.
 //
 // Link parsing is mihomo's own (common/convert), so whatever mihomo understands
-// works here. Links mihomo can't run (naive+https://, masque://) are reported
-// in Result.Skipped.
+// works here. Naive links become proxies of type "naive" that the engine runs
+// through sing-box (see naive.go). Links nothing here can run are reported in
+// Result.Skipped.
 package convert
 
 import (
@@ -36,17 +37,24 @@ var ErrNoProxies = errors.New("no supported links in the subscription")
 // LinksToMihomo converts share links (plain or base64) to a mihomo YAML config
 // with the [routing] template ("" = RoutingAll).
 func LinksToMihomo(body []byte, routing string) (*Result, error) {
+	text := string(mconv.DecodeBase64(body))
+	naive, badNaive := naiveLinks(text)
 	proxies, err := mconv.ConvertsV2Ray(body)
-	if err != nil && len(proxies) == 0 {
+	if err != nil && len(proxies) == 0 && len(naive) == 0 {
 		return nil, err
 	}
-	res := &Result{Skipped: skippedSchemes(body, len(proxies))}
+	// Keep the subscription's order: mihomo's converter drops naive links, so
+	// put each naive proxy back after the links that came before it.
+	proxies = mergeNaive(text, proxies, naive)
+	res := &Result{Skipped: skippedSchemes(body, len(proxies), badNaive)}
 	if len(proxies) == 0 {
 		return nil, ErrNoProxies
 	}
 	names := make([]string, 0, len(proxies))
+	taken := map[string]bool{}
 	for _, p := range proxies {
-		names = append(names, fmt.Sprint(p["name"]))
+		p["name"] = uniqueName(fmt.Sprint(p["name"]), taken)
+		names = append(names, p["name"].(string))
 	}
 	res.Proxies = len(proxies)
 
@@ -108,7 +116,7 @@ func LinksToMihomo(body []byte, routing string) (*Result, error) {
 
 // skippedSchemes lists schemes of links that produced no proxy. It's only a
 // hint for the UI, so it simply compares counts per scheme.
-func skippedSchemes(body []byte, converted int) []string {
+func skippedSchemes(body []byte, converted int, badNaive map[string]bool) []string {
 	text := string(mconv.DecodeBase64(body))
 	total := map[string]int{}
 	lines := 0
@@ -127,6 +135,9 @@ func skippedSchemes(body []byte, converted int) []string {
 		"hysteria": true, "hysteria2": true, "hy2": true, "tuic": true, "trojan": true, "vless": true,
 		"vmess": true, "ss": true, "ssr": true, "socks": true, "socks5": true, "socks5h": true,
 		"http": true, "https": true, "anytls": true, "mierus": true,
+	}
+	for _, s := range []string{"naive+https", "naive+quic"} {
+		known[s] = !badNaive[s] // converted here, unless a link was broken
 	}
 	var out []string
 	for s := range total {

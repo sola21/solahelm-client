@@ -66,6 +66,7 @@ type Status struct {
 	StartedAt        *time.Time        `json:"startedAt,omitempty"`
 	Detect           *detect.Result    `json:"detect,omitempty"`
 	Elevated         bool              `json:"elevated"`
+	Naive            []string          `json:"naive,omitempty"` // proxies run through the naive bridge (mihomo shows Socks5)
 	Error            string            `json:"error,omitempty"`
 	Version          map[string]string `json:"version"`
 }
@@ -350,6 +351,7 @@ func (s *Server) Start(req StartRequest) (Status, error) {
 	s.status = Status{
 		Running: true, Core: kind, Mode: req.Mode, Port: port,
 		Controller: controller, ControllerSecret: apiSecret, StartedAt: &now, Detect: &det,
+		Naive: s.mgr.NaiveNodes(),
 	}
 	s.running.Store(true)
 	if s.OnStarted != nil {

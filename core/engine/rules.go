@@ -331,6 +331,9 @@ func ValidateWithRules(kind Kind, config []byte, rules *Rules) error {
 		if err != nil {
 			return err
 		}
+		if raw, _, err = rewriteNaive(raw, false); err != nil {
+			return err
+		}
 		_, err = executor.ParseWithBytes(raw)
 		return err
 	}

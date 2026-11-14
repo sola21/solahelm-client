@@ -112,6 +112,13 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
 set(SOLAHELM_CORE "${CMAKE_CURRENT_SOURCE_DIR}/../../core/bin/solahelm-core.exe")
 if(EXISTS "${SOLAHELM_CORE}")
   install(FILES "${SOLAHELM_CORE}" DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
+  # NaiveProxy (cronet), loaded by the core at run time; core/build.ps1 copies it.
+  set(SOLAHELM_CRONET "${CMAKE_CURRENT_SOURCE_DIR}/../../core/bin/libcronet.dll")
+  if(EXISTS "${SOLAHELM_CRONET}")
+    install(FILES "${SOLAHELM_CRONET}" DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
+  else()
+    message(WARNING "libcronet.dll not found at ${SOLAHELM_CRONET}: Naive proxies won't work")
+  endif()
 else()
   message(WARNING "solahelm-core.exe not found at ${SOLAHELM_CORE}: run core/build.ps1; the app will start in demo mode")
 endif()

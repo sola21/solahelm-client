@@ -179,8 +179,9 @@ func linkProtocol(link string) (string, bool) {
 var support = map[engine.Kind]map[string]bool{
 	engine.SingBox: set("hysteria2", "hysteria", "vless", "vmess", "trojan", "tuic", "shadowsocks",
 		"anytls", "naive", "wireguard", "socks", "ssh"),
+	// naive: through the built-in sing-box bridge (engine/naive.go).
 	engine.Mihomo: set("hysteria2", "hysteria", "vless", "vmess", "trojan", "tuic", "shadowsocks",
-		"shadowsocksr", "anytls", "wireguard", "socks", "ssh", "mieru", "masque"),
+		"shadowsocksr", "anytls", "naive", "wireguard", "socks", "ssh", "mieru", "masque"),
 }
 
 func set(items ...string) map[string]bool {

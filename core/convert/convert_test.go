@@ -2,6 +2,7 @@ package convert
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -25,10 +26,10 @@ func TestLinksToMihomo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if r.Proxies != 5 {
-				t.Fatalf("proxies = %d, want 5", r.Proxies)
+			if r.Proxies != 6 {
+				t.Fatalf("proxies = %d, want 6", r.Proxies)
 			}
-			if strings.Join(r.Skipped, ",") != "naive+https" {
+			if len(r.Skipped) != 0 {
 				t.Fatalf("skipped = %v", r.Skipped)
 			}
 			var cfg map[string]any
@@ -45,13 +46,53 @@ func TestLinksToMihomo(t *testing.T) {
 			if hy["type"] != "hysteria2" || hy["ports"] != "443,20000-30000" {
 				t.Fatalf("hysteria2 with port hopping: %v", hy)
 			}
+			// The naive link keeps its place in the list.
+			nv := ps[1].(map[string]any)
+			if nv["type"] != TypeNaive || nv["name"] != "DE-naive" || nv["server"] != "vps1.example.org" ||
+				nv["port"] != 6443 || nv["username"] != "u" || nv["password"] != "p" {
+				t.Fatalf("naive: %v", nv)
+			}
+			auto := cfg["proxy-groups"].([]any)[1].(map[string]any)
+			if !strings.Contains(fmt.Sprint(auto["proxies"]), "DE-naive") {
+				t.Fatalf("naive is not in the auto group: %v", auto)
+			}
 		})
 	}
 }
 
 func TestNothingUsable(t *testing.T) {
-	if _, err := LinksToMihomo([]byte("naive+https://u:p@x:1#a\n"), ""); err == nil {
+	if _, err := LinksToMihomo([]byte("foo://u:p@x:1#a\n"), ""); err == nil {
 		t.Fatal("expected an error")
+	}
+}
+
+func TestNaiveLinks(t *testing.T) {
+	r, err := LinksToMihomo([]byte("naive+quic://us%40er:p%3Ass@[2001:db8::1]:8443?sni=cdn.example.org"+
+		"&extra-headers=X-A%3A%201%0D%0AX-B%3A%202&insecure-concurrency=2#Same\n"+
+		"naive+https://u:p@vps1.example.org#Same\n"+
+		"naive+https://broken:p@:1#x\n"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Proxies != 2 || strings.Join(r.Skipped, ",") != "naive+https" {
+		t.Fatalf("proxies %d, skipped %v", r.Proxies, r.Skipped)
+	}
+	var cfg map[string]any
+	if err := yaml.Unmarshal(r.YAML, &cfg); err != nil {
+		t.Fatal(err)
+	}
+	ps := cfg["proxies"].([]any)
+	q := ps[0].(map[string]any)
+	if q["quic"] != true || q["server"] != "2001:db8::1" || q["port"] != 8443 || q["username"] != "us@er" ||
+		q["password"] != "p:ss" || q["sni"] != "cdn.example.org" || q["insecure-concurrency"] != 2 {
+		t.Fatalf("naive+quic: %v", q)
+	}
+	if h := q["extra-headers"].(map[string]any); h["X-A"] != "1" || h["X-B"] != "2" {
+		t.Fatalf("headers: %v", h)
+	}
+	h := ps[1].(map[string]any)
+	if h["port"] != 443 || h["quic"] != nil || h["name"] != "Same 2" {
+		t.Fatalf("naive+https, default port, unique name: %v", h)
 	}
 }
 

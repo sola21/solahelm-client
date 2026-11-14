@@ -38,6 +38,9 @@ class DaemonBackend implements CoreBackend {
   Uri? _clash;
   String _clashSecret = '';
   bool _elevated = false;
+
+  /// Proxies the core runs through its naive bridge (mihomo reports them as Socks5).
+  Set<String> _naive = const {};
   Process? _process;
   Future<void>? _starting;
 
@@ -273,6 +276,7 @@ class DaemonBackend implements CoreBackend {
       _clash = null;
     }
     _elevated = m['elevated'] == true;
+    _naive = {...?(m['naive'] as List?)?.map((e) => e.toString())};
     return CoreStatus(
       running: m['running'] == true,
       core: parseCore(m['core'] as String?),
@@ -438,7 +442,8 @@ class DaemonBackend implements CoreBackend {
       } else if (!builtin.contains(type.toLowerCase())) {
         final history = (p['history'] as List?) ?? const [];
         final last = history.isEmpty ? null : (history.last as Map)['delay'] as num?;
-        leaves[name] = ProxyNode(name: name, type: type, delayMs: (last == null || last == 0) ? null : last.toInt());
+        leaves[name] = ProxyNode(
+            name: name, type: _naive.contains(name) ? 'Naive' : type, delayMs: (last == null || last == 0) ? null : last.toInt());
       }
     });
     // Selectors first: they are the ones the user can switch.

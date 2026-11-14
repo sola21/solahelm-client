@@ -27,7 +27,8 @@ func TestDetect(t *testing.T) {
 		{"plain links", links, "", ShareLinks, engine.Mihomo, 0},
 		{"plain links, prefer sing-box", links, engine.SingBox, ShareLinks, engine.Mihomo, 0},
 		{"base64 links", base64.StdEncoding.EncodeToString([]byte(links)), "", ShareLinks, engine.Mihomo, 0},
-		{"naive is reported as unsupported", links + "naive+https://u:p@vps1.example.org:6443#n\n", "", ShareLinks, engine.Mihomo, 1},
+		{"naive runs on mihomo (through the bridge)", links + "naive+https://u:p@vps1.example.org:6443#n\n", "", ShareLinks, engine.Mihomo, 0},
+		{"unknown schemes are reported", links + "foo://u@vps1.example.org:1#n\n", "", ShareLinks, engine.Mihomo, 0},
 		{"ssr runs on mihomo", links + "ssr://abc\n", "", ShareLinks, engine.Mihomo, 0},
 	}
 	for _, c := range cases {

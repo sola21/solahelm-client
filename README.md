@@ -97,7 +97,13 @@ are the same.
 
 A list of links becomes a complete mihomo config (`core/convert`; the link parser is mihomo's own):
 groups `Proxy` (manual) and `Auto` (by latency), DNS through the tunnel, TUN, local networks direct.
-Links mihomo can't run (Naive, MASQUE) are skipped — the subscription card says so.
+**Naive** (`naive+https://`, `naive+quic://`) works too, although mihomo has no such protocol: the core
+runs those nodes in the built-in sing-box (`with_naive_outbound`, cronet) and gives mihomo a local SOCKS5
+proxy for each (`core/engine/naive.go`). So they sit in the same groups, get latency tests and follow the
+same rules; UDP goes over TCP. naive's own connections and DNS go through mihomo's dialer and resolver
+for proxy servers, like mihomo's other proxies: bound to the real interface in TUN, protected on Android.
+On Windows the core loads `libcronet.dll` from its folder. Links nothing here can run are skipped — the
+subscription card says so.
 A list of links has no rules of its own, so the client adds a routing template (Settings → Routing):
 **Russia direct** (the default, like the panel's template: Russian sites and apps, torrents and the local
 network bypass the VPN, blocked sites and everything else go through it; the legiz-ru and MetaCubeX rule
@@ -212,7 +218,7 @@ next to it (or with `--dart-define=DEMO=true`) the app runs on demo data.
   TUN on Windows. The DNS mode "Own, via the VPN" helps.
 - mihomo keeps `cache.db` open until the process ends, so its working folder is permanent.
 - If a port from the config is taken by another client, mihomo carries on without that port.
-- The panel's sing-box JSON subscription has no Naive, the links do (mihomo skips them).
+- The panel's sing-box JSON subscription has no Naive, the links do: take the links to get Naive.
 
 ## Roadmap
 
