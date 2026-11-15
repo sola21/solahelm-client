@@ -6,6 +6,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import '../l10n/app_localizations.dart';
 import '../core/android_backend.dart';
 import '../core/open_url.dart';
+import '../core/updater.dart';
 import '../desktop.dart';
 import '../models.dart';
 import '../state/app_state.dart';
@@ -15,7 +16,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.4.2';
+const appVersion = '0.4.3';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 const repoUrl = 'https://github.com/sola21/solahelm-client';
@@ -369,7 +370,7 @@ class _UpdatesCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(upd.notes.trim(), maxLines: 8, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: p.muted)),
+              child: Text(plainNotes(upd.notes), maxLines: 8, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: p.muted)),
             ),
           ),
       ]),

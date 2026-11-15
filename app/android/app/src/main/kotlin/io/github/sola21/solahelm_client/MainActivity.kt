@@ -125,7 +125,15 @@ class MainActivity : FlutterActivity() {
             )
             return "permission"
         }
-        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.updates", java.io.File(path))
+        // Dart's temporary folder on Android is code_cache, which FileProvider
+        // can't serve: hand the installer a copy in cache/updates (res/xml/update_paths.xml).
+        val src = java.io.File(path)
+        val dir = java.io.File(cacheDir, "updates").apply { mkdirs() }
+        val apk = java.io.File(dir, "update.apk")
+        if (src.canonicalPath != apk.canonicalPath) {
+            src.copyTo(apk, overwrite = true)
+        }
+        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.updates", apk)
         startActivity(
             Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, "application/vnd.android.package-archive")

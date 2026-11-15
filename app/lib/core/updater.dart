@@ -36,6 +36,20 @@ int compareVersions(String a, String b) {
   return px.compareTo(py);
 }
 
+/// Release notes as plain text for the app: no Markdown marks, links shown
+/// by their text, and only the part before "---" (the English summary follows it).
+String plainNotes(String md) {
+  var s = md.replaceAll('\r\n', '\n');
+  final cut = RegExp(r'^\s*---\s*$', multiLine: true).firstMatch(s);
+  if (cut != null) s = s.substring(0, cut.start);
+  s = s
+      .replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^)]*\)'), (m) => m[1]!)
+      .replaceAll('**', '')
+      .replaceAll('`', '')
+      .replaceAllMapped(RegExp(r'^(\s*)[-*] ', multiLine: true), (m) => '${m[1]}• ');
+  return s.trim();
+}
+
 /// The APK for this phone: "arm64" or "x86_64" (Dart reports e.g. `on "android_arm64"`).
 String androidAbi([String? version]) {
   final m = RegExp(r'android_(\w+)').firstMatch(version ?? Platform.version);

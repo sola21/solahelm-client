@@ -88,6 +88,11 @@ void main() {
     expect(File('${app.path}${sep}solahelm_client.exe').readAsStringSync(), 'new exe');
   }, timeout: const Timeout(Duration(seconds: 90)));
 
+  test('release notes as plain text', () {
+    const md = '**ShadowTLS v3**\n- Link `ss://…` works, see [release](https://x).\n\n---\n\nEnglish summary.';
+    expect(plainNotes(md), 'ShadowTLS v3\n• Link ss://… works, see release.');
+  });
+
   test('Android: the APK for this phone', () {
     expect(androidAbi('3.9.0 (stable) on "android_arm64"'), 'arm64');
     expect(androidAbi('3.9.0 (stable) on "android_x64"'), 'x86_64');

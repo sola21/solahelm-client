@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Downloaded updates (the app's cache folder), handed to Android's package installer. -->
+<!-- Downloaded updates (cache/updates, see MainActivity.installApk), handed to Android's package installer. -->
 <paths>
-    <cache-path name="updates" path="." />
+    <cache-path name="updates" path="updates/" />
 </paths>
