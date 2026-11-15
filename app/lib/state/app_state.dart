@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/backend.dart';
 import '../core/panel_api.dart';
+import '../core/android_backend.dart';
 import '../core/updater.dart';
 import '../models.dart';
 import 'settings.dart';
@@ -721,19 +722,37 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Android: the downloaded APK, kept for a second tap after Android asked
+  /// to allow installs from this app.
+  File? _apk;
+  String? _apkVersion;
+
+  /// Notice message key: Android opened "install unknown apps" for SolaHelm.
+  static const updatePermission = 'update-permission';
+
   /// Downloads the update and starts the installer; returns true when the app
-  /// should now exit so the installer can replace its files.
+  /// should now exit so the installer can replace its files (Windows). On
+  /// Android it opens Android's installer and returns false.
   Future<bool> downloadAndInstallUpdate() async {
     final u = updater, info = update;
     if (u == null || info == null || updateProgress != null) return false;
     updateProgress = 0;
     _notify();
     try {
-      final zip = await u.download(info, proxyPort: _proxyPort, onProgress: (p) {
-        updateProgress = p;
-        _notify();
-      });
-      await u.install(zip, reconnect: status == LinkStatus.connected);
+      final cached = u.android && _apkVersion == info.version && _apk != null && await _apk!.exists();
+      final file = cached
+          ? _apk!
+          : await u.download(info, proxyPort: _proxyPort, onProgress: (p) {
+              updateProgress = p;
+              _notify();
+            });
+      if (u.android) {
+        _apk = file;
+        _apkVersion = info.version;
+        if (await installApk(file.path) == 'permission') _notices.add(Notice(NoticeKind.info, updatePermission));
+        return false;
+      }
+      await u.install(file, reconnect: status == LinkStatus.connected);
       return true;
     } catch (e) {
       updateStatus = e.toString();
@@ -744,6 +763,9 @@ class AppState extends ChangeNotifier {
       _notify();
     }
   }
+
+  /// Opens Android's installer for [path] (tests replace it).
+  Future<String> Function(String path) installApk = AndroidBridge.installApk;
 
   /// Notice message key: TUN needs admin rights and they were not granted.
   static const notElevated = 'not-elevated';

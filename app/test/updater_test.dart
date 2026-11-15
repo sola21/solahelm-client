@@ -88,6 +88,20 @@ void main() {
     expect(File('${app.path}${sep}solahelm_client.exe').readAsStringSync(), 'new exe');
   }, timeout: const Timeout(Duration(seconds: 90)));
 
+  test('Android: the APK for this phone', () {
+    expect(androidAbi('3.9.0 (stable) on "android_arm64"'), 'arm64');
+    expect(androidAbi('3.9.0 (stable) on "android_x64"'), 'x86_64');
+    expect(androidAbi('3.9.0 (stable) on "windows_x64"'), 'arm64'); // not Android: the usual phone
+  });
+
+  test('check against the real repository (Android picks the APK)', () async {
+    if (Platform.environment['SOLAHELM_NET_TESTS'] == null) return;
+    final port = int.tryParse(Platform.environment['SOLAHELM_TEST_PROXY_PORT'] ?? '');
+    final u = Updater(currentVersion: '0.0.1', portable: false, android: true, abi: 'arm64');
+    final info = await u.check(proxyPort: port);
+    expect(info?.url, endsWith('-android-arm64.apk'));
+  });
+
   test('check against the real repository', () async {
     if (Platform.environment['SOLAHELM_NET_TESTS'] == null) return;
     final u = Updater(currentVersion: '0.0.1', portable: false);

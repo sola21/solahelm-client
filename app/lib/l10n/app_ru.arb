@@ -663,5 +663,8 @@
   "dnsSingBoxNote": "Профили sing-box всегда используют свой DNS.",
   "dnsServers": "Серверы",
   "dnsServersDirectHint": "Для всех имён, мимо VPN. Обычные IP-адреса или шифрованный DNS: https://…, tls://…",
-  "panelSignInAnother": "Войти в другую панель"
+  "panelSignInAnother": "Войти в другую панель",
+  "updateAction": "Обновить",
+  "updateHintAndroid": "Клиент скачает APK (через VPN, если он включён) и откроет установку Android. Настройки и подписки сохранятся.",
+  "updatePermission": "Разрешите установку приложений для SolaHelm (откроется настройка Android) и нажмите «Обновить» ещё раз."
 }

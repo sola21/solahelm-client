@@ -54,12 +54,19 @@ class _ShellState extends State<Shell> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     switch (n.kind) {
       case NoticeKind.info:
-        final text = n.message == 'no-subscription'
-            ? s.needSubscription
-            : n.message.startsWith('update:')
-                ? s.updateAvailable(n.message.substring(7))
-                : n.message;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+        final update = n.message.startsWith('update:');
+        final text = switch (n.message) {
+          'no-subscription' => s.needSubscription,
+          AppState.updatePermission => s.updatePermission,
+          _ when update => s.updateAvailable(n.message.substring(7)),
+          _ => n.message,
+        };
+        final st = AppScope.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(text),
+          duration: Duration(seconds: update || n.message == AppState.updatePermission ? 10 : 4),
+          action: update ? SnackBarAction(label: s.updateAction, onPressed: () => startUpdate(st)) : null,
+        ));
         if (n.message == 'no-subscription') setState(() => _section = Section.subscriptions);
       case NoticeKind.error:
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

@@ -2226,6 +2226,24 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Войти в другую панель'**
   String get panelSignInAnother;
+
+  /// No description provided for @updateAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get updateAction;
+
+  /// No description provided for @updateHintAndroid.
+  ///
+  /// In ru, this message translates to:
+  /// **'Клиент скачает APK (через VPN, если он включён) и откроет установку Android. Настройки и подписки сохранятся.'**
+  String get updateHintAndroid;
+
+  /// No description provided for @updatePermission.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешите установку приложений для SolaHelm (откроется настройка Android) и нажмите «Обновить» ещё раз.'**
+  String get updatePermission;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

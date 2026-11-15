@@ -1232,4 +1232,15 @@ class SRu extends S {
 
   @override
   String get panelSignInAnother => 'Войти в другую панель';
+
+  @override
+  String get updateAction => 'Обновить';
+
+  @override
+  String get updateHintAndroid =>
+      'Клиент скачает APK (через VPN, если он включён) и откроет установку Android. Настройки и подписки сохранятся.';
+
+  @override
+  String get updatePermission =>
+      'Разрешите установку приложений для SolaHelm (откроется настройка Android) и нажмите «Обновить» ещё раз.';
 }

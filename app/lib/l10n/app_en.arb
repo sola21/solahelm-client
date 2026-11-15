@@ -396,5 +396,8 @@
   "dnsSingBoxNote": "sing-box profiles always use their own DNS.",
   "dnsServers": "Servers",
   "dnsServersDirectHint": "For every name, around the VPN. Plain IP addresses or encrypted DNS: https://…, tls://…",
-  "panelSignInAnother": "Sign in to another panel"
+  "panelSignInAnother": "Sign in to another panel",
+  "updateAction": "Update",
+  "updateHintAndroid": "The client downloads the APK (through the VPN if it's on) and opens Android's installer. Settings and subscriptions stay.",
+  "updatePermission": "Allow SolaHelm to install apps (Android's settings open) and tap \"Update\" again."
 }

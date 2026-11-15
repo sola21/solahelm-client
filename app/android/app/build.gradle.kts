@@ -74,4 +74,6 @@ flutter {
 dependencies {
     // sing-box + mihomo + the control daemon, built by core/build-android.sh (gomobile).
     implementation(files("libs/solahelm-core.aar"))
+    // FileProvider: hands a downloaded update to Android's package installer.
+    implementation("androidx.core:core:1.13.1")
 }

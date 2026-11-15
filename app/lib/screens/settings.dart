@@ -8,13 +8,14 @@ import '../core/android_backend.dart';
 import '../core/open_url.dart';
 import '../desktop.dart';
 import '../models.dart';
+import '../state/app_state.dart';
 import '../state/scope.dart';
 import '../state/settings.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.4.0';
+const appVersion = '0.4.1';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 const repoUrl = 'https://github.com/sola21/solahelm-client';
@@ -301,6 +302,17 @@ Future<void> _recordHotkey(BuildContext context, Settings settings) async {
   if (ok == true && recorded != null) settings.setToggleHotkey(recorded!.toJson());
 }
 
+/// "Update": Windows downloads, installs and restarts; Android downloads the
+/// APK and opens Android's installer.
+Future<void> startUpdate(AppState st) async {
+  final desktop = DesktopShell.instance;
+  if (desktop != null) {
+    await desktop.installUpdateAndExit();
+  } else {
+    await st.downloadAndInstallUpdate();
+  }
+}
+
 class _UpdatesCard extends StatelessWidget {
   const _UpdatesCard();
 
@@ -337,10 +349,12 @@ class _UpdatesCard extends StatelessWidget {
                     Text(s.updateDownloading((st.updateProgress! * 100).round()), style: TextStyle(fontSize: 12, color: p.muted)),
                   ]),
                 )
-              : (upd != null ? Text(s.updateHint, style: TextStyle(fontSize: 12, color: p.muted)) : null),
+              : (upd != null
+                  ? Text(Platform.isAndroid ? s.updateHintAndroid : s.updateHint, style: TextStyle(fontSize: 12, color: p.muted))
+                  : null),
           trailing: upd != null
               ? FilledButton(
-                  onPressed: st.updateProgress != null ? null : () => DesktopShell.instance?.installUpdateAndExit(),
+                  onPressed: st.updateProgress != null ? null : () => startUpdate(st),
                   child: Text(s.updateTo(upd.version)),
                 )
               : OutlinedButton(

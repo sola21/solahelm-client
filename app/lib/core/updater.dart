@@ -7,7 +7,7 @@ class UpdateInfo {
   const UpdateInfo({required this.version, required this.notes, required this.url, required this.size, required this.page});
   final String version; // "0.2.0"
   final String notes;
-  final String url; // zip asset
+  final String url; // zip / setup / apk asset
   final int size;
   final String page; // release page
 }
@@ -36,10 +36,30 @@ int compareVersions(String a, String b) {
   return px.compareTo(py);
 }
 
-/// Checks GitHub Releases and installs updates of the Windows build.
+/// The APK for this phone: "arm64" or "x86_64" (Dart reports e.g. `on "android_arm64"`).
+String androidAbi([String? version]) {
+  final m = RegExp(r'android_(\w+)').firstMatch(version ?? Platform.version);
+  return switch (m?.group(1)) { 'x64' => 'x86_64', final a? => a, null => 'arm64' };
+}
+
+/// Checks GitHub Releases and installs updates: Windows (zip / setup) and
+/// Android (APK, installed by Android itself, see AndroidBridge.installApk).
 class Updater {
-  Updater({required this.currentVersion, required this.portable, this.repo = 'sola21/solahelm-client', bool? installed})
-      : installed = installed ?? (!portable && _hasUninstaller(File(Platform.resolvedExecutable).parent.path));
+  Updater({
+    required this.currentVersion,
+    required this.portable,
+    this.repo = 'sola21/solahelm-client',
+    bool? installed,
+    bool? android,
+    String? abi,
+  })  : android = android ?? Platform.isAndroid,
+        abi = abi ?? androidAbi(),
+        installed = installed ??
+            (!(android ?? Platform.isAndroid) && !portable && _hasUninstaller(File(Platform.resolvedExecutable).parent.path));
+
+  /// Android: the update is an APK.
+  final bool android;
+  final String abi;
 
   final String currentVersion;
   final bool portable;
@@ -72,9 +92,10 @@ class Updater {
     if (tag.isEmpty || compareVersions(tag, currentVersion) <= 0) return null;
     // An installed copy prefers the setup, and falls back to the zip.
     final wants = [
-      if (portable) '-windows-x64-portable.zip',
-      if (!portable && installed) '-windows-x64-setup.exe',
-      if (!portable) '-windows-x64.zip',
+      if (android) '-android-$abi.apk',
+      if (!android && portable) '-windows-x64-portable.zip',
+      if (!android && !portable && installed) '-windows-x64-setup.exe',
+      if (!android && !portable) '-windows-x64.zip',
     ];
     final assets = ((m['assets'] as List?) ?? const []).cast<Map>();
     for (final want in wants) {
@@ -118,7 +139,8 @@ class Updater {
   /// Downloads the update zip; [onProgress] gets 0..1.
   Future<File> download(UpdateInfo info, {int? proxyPort, void Function(double)? onProgress}) async {
     final dir = await Directory.systemTemp.createTemp('solahelm-update-');
-    final name = info.url.toLowerCase().endsWith('.exe') ? 'update-setup.exe' : 'update.zip';
+    final url = info.url.toLowerCase();
+    final name = url.endsWith('.exe') ? 'update-setup.exe' : (url.endsWith('.apk') ? 'update.apk' : 'update.zip');
     final file = File('${dir.path}${Platform.pathSeparator}$name');
     final c = _client(proxyPort);
     try {

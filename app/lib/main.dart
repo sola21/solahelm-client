@@ -58,7 +58,7 @@ Future<void> main(List<String> args) async {
       unawaited(AndroidBridge.setNotificationVisible(notify).catchError((_) {}));
     });
   }
-  if (Platform.isWindows && exe != null) {
+  if ((Platform.isWindows && exe != null) || (Platform.isAndroid && !demo)) {
     state.updater = Updater(currentVersion: appVersion, portable: isPortable);
   }
   await state.init();

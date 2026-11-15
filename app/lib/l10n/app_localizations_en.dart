@@ -1229,4 +1229,15 @@ class SEn extends S {
 
   @override
   String get panelSignInAnother => 'Sign in to another panel';
+
+  @override
+  String get updateAction => 'Update';
+
+  @override
+  String get updateHintAndroid =>
+      'The client downloads the APK (through the VPN if it\'s on) and opens Android\'s installer. Settings and subscriptions stay.';
+
+  @override
+  String get updatePermission =>
+      'Allow SolaHelm to install apps (Android\'s settings open) and tap \"Update\" again.';
 }

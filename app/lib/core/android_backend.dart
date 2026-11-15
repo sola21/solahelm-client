@@ -20,6 +20,11 @@ class AndroidBridge {
   /// Android's settings for the folded notification, where it can be turned off.
   static Future<void> openNotificationSettings() => channel.invokeMethod<void>('openNotificationSettings');
 
+  /// Opens Android's installer for a downloaded APK: "started", or
+  /// "permission" when Android's "install unknown apps" page opened instead.
+  static Future<String> installApk(String path) async =>
+      await channel.invokeMethod<String>('installApk', {'path': path}) ?? 'started';
+
   static DaemonBackend backend(String workDir) {
     channel.setMethodCallHandler((call) async {
       switch (call.method) {

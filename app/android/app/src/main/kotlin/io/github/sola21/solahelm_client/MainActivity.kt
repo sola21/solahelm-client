@@ -18,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
  *  vpnStart({mtu, excludeLan, title}) -> fd  asks for the VPN permission if needed, opens the TUN
  *  vpnStop()
  *  setNotificationVisible({visible}), openNotificationSettings()
+ *  installApk({path}) -> "started" | "permission"  opens Android's installer for a downloaded update
  * and events back to Dart: vpnRevoked, coreChanged (the tile or the
  * notification turned the VPN on or off).
  */
@@ -87,6 +88,13 @@ class MainActivity : FlutterActivity() {
                     openNotificationSettings()
                     result.success(null)
                 }
+                "installApk" -> {
+                    try {
+                        result.success(installApk(call.argument<String>("path")!!))
+                    } catch (e: Exception) {
+                        result.error("install", e.message, null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -103,6 +111,27 @@ class MainActivity : FlutterActivity() {
         ) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFY)
         }
+    }
+
+    /**
+     * Opens Android's installer for a downloaded APK. The first time Android
+     * asks to allow installs from this app: that page opens instead and the
+     * user taps "Update" again afterwards.
+     */
+    private fun installApk(path: String): String {
+        if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
+            startActivity(
+                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:$packageName"))
+            )
+            return "permission"
+        }
+        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.updates", java.io.File(path))
+        startActivity(
+            Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, "application/vnd.android.package-archive")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        return "started"
     }
 
     /** Android's page for the folded notification, where it can be switched off entirely. */
