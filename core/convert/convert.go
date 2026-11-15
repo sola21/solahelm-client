@@ -46,6 +46,7 @@ func LinksToMihomo(body []byte, routing string) (*Result, error) {
 	// Keep the subscription's order: mihomo's converter drops naive links, so
 	// put each naive proxy back after the links that came before it.
 	proxies = mergeNaive(text, proxies, naive)
+	applySSPlugins(text, proxies) // ShadowTLS, which mihomo's converter drops
 	res := &Result{Skipped: skippedSchemes(body, len(proxies), badNaive)}
 	if len(proxies) == 0 {
 		return nil, ErrNoProxies

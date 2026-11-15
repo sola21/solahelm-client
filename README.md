@@ -102,7 +102,9 @@ runs those nodes in the built-in sing-box (`with_naive_outbound`, cronet) and gi
 proxy for each (`core/engine/naive.go`). So they sit in the same groups, get latency tests and follow the
 same rules; UDP goes over TCP. naive's own connections and DNS go through mihomo's dialer and resolver
 for proxy servers, like mihomo's other proxies: bound to the real interface in TUN, protected on Android.
-On Windows the core loads `libcronet.dll` from its folder. Links nothing here can run are skipped — the
+On Windows the core loads `libcronet.dll` from its folder. **ShadowTLS v3** links (`ss://…?plugin=shadow-tls;host=…;password=…;version=3`,
+as the panel makes them) keep their plugin: mihomo's own converter drops it, the client puts it back (`core/convert/plugins.go`).
+Links nothing here can run are skipped — the
 subscription card says so.
 A list of links has no rules of its own, so the client adds a routing template (Settings → Routing):
 **Russia direct** (the default, like the panel's template: Russian sites and apps, torrents and the local

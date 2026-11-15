@@ -3,9 +3,11 @@ package convert
 import (
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 
+	"github.com/metacubex/mihomo/adapter"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -155,5 +157,38 @@ func TestRoutingTemplates(t *testing.T) {
 
 	if _, err := LinksToMihomo([]byte(links), "bogus"); err == nil {
 		t.Fatal("unknown template accepted")
+	}
+}
+
+func TestShadowTLSPlugin(t *testing.T) {
+	plugin := url.QueryEscape("shadow-tls;host=www.example.com;password=stls-pass;version=3")
+	body := "ss://2022-blake3-aes-128-gcm:" + url.QueryEscape("AAAAAAAAAAAAAAAAAAAAAA==") + "@vps1.example.org:4443/?plugin=" + plugin + "#DE-stls\n" +
+		"ss://2022-blake3-aes-128-gcm:" + url.QueryEscape("AAAAAAAAAAAAAAAAAAAAAA==:BBBBBBBBBBBBBBBBBBBBBB==") + "@vps1.example.org:2443#DE-ss\n"
+	r, err := LinksToMihomo([]byte(body), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cfg map[string]any
+	if err := yaml.Unmarshal(r.YAML, &cfg); err != nil {
+		t.Fatal(err)
+	}
+	ps := cfg["proxies"].([]any)
+	if len(ps) != 2 {
+		t.Fatalf("proxies: %v", ps)
+	}
+	st, ss := ps[0].(map[string]any), ps[1].(map[string]any)
+	opts, _ := st["plugin-opts"].(map[string]any)
+	if st["plugin"] != "shadow-tls" || opts["host"] != "www.example.com" || opts["password"] != "stls-pass" ||
+		opts["version"] != 3 || st["client-fingerprint"] != "chrome" {
+		t.Fatalf("ShadowTLS lost: %v", st)
+	}
+	if ss["plugin"] != nil {
+		t.Fatalf("plain Shadowsocks got a plugin: %v", ss)
+	}
+	// mihomo accepts the node as it is.
+	for _, p := range ps {
+		if _, err := adapter.ParseProxy(p.(map[string]any)); err != nil {
+			t.Fatalf("mihomo: %v (%v)", err, p)
+		}
 	}
 }

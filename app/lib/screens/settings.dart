@@ -15,7 +15,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'settings_advanced.dart';
 
-const appVersion = '0.4.1';
+const appVersion = '0.4.2';
 const singBoxVersion = '1.14.4';
 const mihomoVersion = '1.19.33';
 const repoUrl = 'https://github.com/sola21/solahelm-client';
