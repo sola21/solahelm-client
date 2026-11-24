@@ -27,6 +27,7 @@ import (
 	singboxC "github.com/sagernet/sing-box/constant"
 
 	"github.com/sola21/solahelm-client/core/convert"
+	"github.com/sola21/solahelm-client/core/daemon"
 	"github.com/sola21/solahelm-client/core/detect"
 	"github.com/sola21/solahelm-client/core/engine"
 )
@@ -48,6 +49,18 @@ func main() {
 		cmdServe(os.Args[2:])
 	case "version":
 		fmt.Printf("sing-box %s\nmihomo   %s\n", singboxC.Version, mihomoC.Version)
+	case "restore-proxy":
+		// Run by Windows at sign-in (RunOnce), by the app when its core died,
+		// and by the uninstaller: undo a system proxy a dead core left behind.
+		ok, err := daemon.RecoverSystemProxy()
+		if err != nil {
+			fatal(err)
+		}
+		if ok {
+			fmt.Println("restored the system proxy settings")
+		} else {
+			fmt.Println("nothing to restore")
+		}
 	default:
 		usage()
 	}
@@ -58,6 +71,7 @@ func usage() {
   corectl detect [-prefer sing-box|mihomo] <file|url>
   corectl run  [flags] <file|url>
   corectl test [flags] [-probe URL] [-timeout 5s] <file|url>
+  corectl restore-proxy    undo a system proxy left by a core that died (Windows)
   corectl version
 
 flags for run/test:

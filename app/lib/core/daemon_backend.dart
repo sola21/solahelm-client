@@ -39,6 +39,10 @@ class DaemonBackend implements CoreBackend {
   String _clashSecret = '';
   bool _elevated = false;
 
+  /// Called when the core exited on its own (a crash, killed from outside),
+  /// after the system proxy it may have left behind was put back.
+  void Function()? onCoreLost;
+
   /// Proxies the core runs through its naive bridge (mihomo reports them as Socks5).
   Set<String> _naive = const {};
   Process? _process;
@@ -83,9 +87,10 @@ class DaemonBackend implements CoreBackend {
       '-workdir', workDir,
     ];
     if (!elevated) {
-      _process = await Process.start(executable, args);
-      _process!.stderr.drain<void>();
-      _process!.stdout.drain<void>();
+      final proc = _process = await Process.start(executable, args);
+      proc.stderr.drain<void>();
+      proc.stdout.drain<void>();
+      unawaited(proc.exitCode.then((_) => _lost(proc)));
     } else {
       await _startElevated(args);
     }
@@ -109,6 +114,24 @@ class DaemonBackend implements CoreBackend {
     } catch (_) {}
     final st = await _call('GET', '/status');
     _elevated = st['elevated'] == true;
+  }
+
+  /// The core process ended. Stopping or detaching it clears [_process]
+  /// first, so anything else is a crash or a kill: undo the system proxy a
+  /// dead core leaves pointing at its closed port, and tell the app.
+  Future<void> _lost(Process proc) async {
+    if (!identical(_process, proc)) return;
+    _process = null;
+    _base = null;
+    _clash = null;
+    _starting = null;
+    _elevated = false;
+    if (Platform.isWindows) {
+      try {
+        await Process.run(executable, ['restore-proxy']).timeout(const Duration(seconds: 10));
+      } catch (_) {}
+    }
+    onCoreLost?.call();
   }
 
   Future<void> _startElevated(List<String> args) async {

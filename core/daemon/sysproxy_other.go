@@ -13,3 +13,6 @@ func (noSystemProxy) Enable(string, []string) error {
 }
 
 func (noSystemProxy) Disable() error { return nil }
+
+// RecoverSystemProxy: there is no system proxy mode here.
+func RecoverSystemProxy() (bool, error) { return false, nil }

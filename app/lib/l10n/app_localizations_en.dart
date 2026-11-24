@@ -1240,4 +1240,8 @@ class SEn extends S {
   @override
   String get updatePermission =>
       'Allow SolaHelm to install apps (Android\'s settings open) and tap \"Update\" again.';
+
+  @override
+  String get coreLost =>
+      'The core stopped unexpectedly: disconnected, and the Windows proxy settings were put back.';
 }

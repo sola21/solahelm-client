@@ -1243,4 +1243,8 @@ class SRu extends S {
   @override
   String get updatePermission =>
       'Разрешите установку приложений для SolaHelm (откроется настройка Android) и нажмите «Обновить» ещё раз.';
+
+  @override
+  String get coreLost =>
+      'Ядро неожиданно остановилось — подключение сброшено, настройки прокси Windows восстановлены.';
 }

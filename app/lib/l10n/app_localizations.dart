@@ -2244,6 +2244,12 @@ abstract class S {
   /// In ru, this message translates to:
   /// **'Разрешите установку приложений для SolaHelm (откроется настройка Android) и нажмите «Обновить» ещё раз.'**
   String get updatePermission;
+
+  /// No description provided for @coreLost.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ядро неожиданно остановилось — подключение сброшено, настройки прокси Windows восстановлены.'**
+  String get coreLost;
 }
 
 class _SDelegate extends LocalizationsDelegate<S> {

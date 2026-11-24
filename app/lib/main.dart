@@ -43,6 +43,7 @@ Future<void> main(List<String> args) async {
     store = MemorySubStore();
   }
   final state = AppState(settings, backend, store, isDemo: exe == null && !(Platform.isAndroid && !demo));
+  if (backend is DaemonBackend && backend.inProcess == null) backend.onCoreLost = state.onCoreLost;
   AndroidBridge.onRevoked = () => state.disconnect();
   AndroidBridge.onCoreChanged = () => state.syncWithCore();
   state.exitLookup = state.isDemo

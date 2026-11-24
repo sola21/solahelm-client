@@ -70,7 +70,11 @@ class _ShellState extends State<Shell> {
         if (n.message == 'no-subscription') setState(() => _section = Section.subscriptions);
       case NoticeKind.error:
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(n.message == AppState.notElevated ? s.notElevated : s.errorPrefix(n.message)),
+          content: Text(switch (n.message) {
+            AppState.notElevated => s.notElevated,
+            AppState.coreLostNotice => s.coreLost,
+            _ => s.errorPrefix(n.message),
+          }),
           duration: const Duration(seconds: 8),
         ));
     }

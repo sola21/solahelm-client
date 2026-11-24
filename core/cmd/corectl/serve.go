@@ -52,6 +52,13 @@ func cmdServe(args []string) {
 		fatal(fmt.Errorf("serve: -listen must be a loopback address, got %q", *listen))
 	}
 
+	// A core that died while in system proxy mode left Windows pointing at its
+	// port: put the user's settings back before anything else.
+	if ok, err := daemon.RecoverSystemProxy(); err != nil {
+		fmt.Fprintln(os.Stderr, "serve: restore system proxy:", err)
+	} else if ok {
+		fmt.Fprintln(os.Stderr, "serve: restored the system proxy settings left by a previous run")
+	}
 	srv := daemon.New(secret, *workdir, map[string]string{"sing-box": singboxC.Version, "mihomo": mihomoC.Version})
 	srv.WatchParent(*parent)
 

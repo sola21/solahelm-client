@@ -70,3 +70,5 @@ Filename: "{app}\solahelm_client.exe"; Description: "{cm:LaunchProgram,SolaHelm}
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM solahelm_client.exe"; Flags: runhidden; RunOnceId: "StopClient"
 Filename: "{sys}\ping.exe"; Parameters: "-n 4 127.0.0.1"; Flags: runhidden; RunOnceId: "WaitCore"
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM solahelm-core.exe"; Flags: runhidden; RunOnceId: "StopCore"
+; A core stopped by force can't restore the system proxy itself: do it here.
+Filename: "{app}\solahelm-core.exe"; Parameters: "restore-proxy"; Flags: runhidden; RunOnceId: "RestoreProxy"

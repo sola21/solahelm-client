@@ -770,6 +770,17 @@ class AppState extends ChangeNotifier {
   /// Notice message key: TUN needs admin rights and they were not granted.
   static const notElevated = 'not-elevated';
 
+  /// Notice message key: the core process died while connected.
+  static const coreLostNotice = 'core-lost';
+
+  /// The core exited on its own (see DaemonBackend.onCoreLost): its system
+  /// proxy is already undone; reset the UI so it doesn't show "connected".
+  void onCoreLost() {
+    if (status == LinkStatus.disconnected) return;
+    _notices.add(Notice(NoticeKind.error, coreLostNotice));
+    unawaited(disconnect());
+  }
+
   Future<void> disconnect() async {
     _clearExit();
     status = LinkStatus.disconnecting;

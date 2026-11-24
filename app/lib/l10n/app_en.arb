@@ -399,5 +399,6 @@
   "panelSignInAnother": "Sign in to another panel",
   "updateAction": "Update",
   "updateHintAndroid": "The client downloads the APK (through the VPN if it's on) and opens Android's installer. Settings and subscriptions stay.",
-  "updatePermission": "Allow SolaHelm to install apps (Android's settings open) and tap \"Update\" again."
+  "updatePermission": "Allow SolaHelm to install apps (Android's settings open) and tap \"Update\" again.",
+  "coreLost": "The core stopped unexpectedly: disconnected, and the Windows proxy settings were put back."
 }
